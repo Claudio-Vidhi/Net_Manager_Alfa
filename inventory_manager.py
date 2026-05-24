@@ -6,7 +6,6 @@ HOSTS_CSV = "network_hosts.csv"
 VERSION_DATA_FILE = "detected_versions.json"
 
 def get_all_devices():
-    """Legge i dispositivi dal file CSV di inventario."""
     devices = []
     if not os.path.exists(HOSTS_CSV):
         return devices
@@ -16,31 +15,25 @@ def get_all_devices():
             devices.append(row)
     return devices
 
-def add_device_to_csv(ip, username, password, enable_secret, vendor):
-    """Aggiunge o aggiorna un dispositivo nel file CSV."""
+def add_device_to_csv(ip, vendor, credential_profile, username="", password="", enable_secret=""):
+    """Salva il dispositivo associandolo a credenziali dirette o a un profilo di gruppo."""
     devices = get_all_devices()
-    
-    # Rimuove il dispositivo se esiste già lo stesso IP per evitare duplicati
     devices = [d for d in devices if d['IP'] != ip]
     
     new_device = {
-        'IP': ip, 
-        'Username': username, 
-        'Password': password,
-        'Enable Secret': enable_secret, 
-        'Vendor': vendor.lower()
+        'IP': ip, 'Vendor': vendor.lower(), 'Profile': credential_profile,
+        'Username': username, 'Password': password, 'Enable Secret': enable_secret
     }
     devices.append(new_device)
     
     with open(HOSTS_CSV, mode='w', newline='', encoding='utf-8') as f:
-        fieldnames = ['IP', 'Username', 'Password', 'Enable Secret', 'Vendor']
+        fieldnames = ['IP', 'Vendor', 'Profile', 'Username', 'Password', 'Enable Secret']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for d in devices:
             writer.writerow(d)
 
 def get_detected_versions():
-    """Ritorna le versioni firmware scansionate e salvate."""
     if os.path.exists(VERSION_DATA_FILE):
         try:
             with open(VERSION_DATA_FILE, 'r', encoding='utf-8') as f:
@@ -49,9 +42,8 @@ def get_detected_versions():
             return {}
     return {}
 
-def update_version_inventory(ip, vendor, software_version):
-    """Aggiorna il database JSON locale con la versione rilevata."""
+def update_version_inventory(ip, vendor, version, status="online"):
     data = get_detected_versions()
-    data[ip] = {"vendor": vendor, "version": software_version}
+    data[ip] = {"vendor": vendor, "version": version, "status": status}
     with open(VERSION_DATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4)
