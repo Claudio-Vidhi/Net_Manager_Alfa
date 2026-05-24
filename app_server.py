@@ -5,9 +5,16 @@ import json
 import urllib.request
 import gzip
 import os
+import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import inventory_manager
 import core_engine
+
+def get_resource_path(relative_path):
+    """Restituisce il percorso assoluto della risorsa, funzionando sia in dev che bundled."""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 PORT = 8765
 BASE_URL = "https://euvdservices.enisa.europa.eu"
@@ -32,7 +39,8 @@ class NetManagerAPIHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self._cors()
             self.end_headers()
-            with open(os.path.join("templates", "dashboard.html"), "rb") as f:
+            template_path = get_resource_path(os.path.join("templates", "dashboard.html"))
+            with open(template_path, "rb") as f:
                 self.wfile.write(f.read())
             return
 
