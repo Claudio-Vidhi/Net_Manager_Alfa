@@ -261,7 +261,39 @@ def delete_group(group_name: str, current_user = Depends(get_current_user)):
 
 @app.get("/api/network-map")
 def get_network_map(current_user = Depends(get_current_user)):
-    return core_engine.generate_network_map()
+    import topology_engine
+    import re
+    
+    topo = topology_engine.parse_topology_from_backups()
+    
+    devices = inventory_manager.get_all_devices()
+    versions = inventory_manager.get_detected_versions()
+    
+    # Arricchisce i nodi con gruppi e stati reali dall'inventario
+    for node in topo["nodes"]:
+        node_id = node["id"]
+        # Cerca un IP all'interno del node_id (es. SwitchA-10.0.0.1 -> 10.0.0.1)
+        ip_match = re.search(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', node_id)
+        ip = ip_match.group(1) if ip_match else None
+        
+        node["group"] = "Discovered"
+        node["status"] = "discovered"
+        
+        if ip:
+            device = next((d for d in devices if d['IP'] == ip), None)
+            if device:
+                node["group"] = device.get("Group", "Generale")
+                scan = versions.get(ip, {"status": "offline"})
+                node["status"] = scan.get("status", "offline")
+                
+    # Assicura le chiavi local_port e remote_port per la visualizzazione dei link nella UI
+    for link in topo["links"]:
+        if "local_port" not in link:
+            link["local_port"] = "Vicino"
+        if "remote_port" not in link:
+            link["remote_port"] = "Vicino"
+            
+    return topo
 
 # --- PROXY TRASPARENTE VERSO ENISA EUVD ---
 
