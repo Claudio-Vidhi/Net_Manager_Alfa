@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Net Manager Alfa Enterprise v3</title>
+  <title>Net Manager Alfa Enterprise Edition v3</title>
   
   <!-- Satoshi & JetBrains Mono Fonts -->
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,600,700,900&f[]=jetbrains-mono@400,700&display=swap" rel="stylesheet">
@@ -194,12 +194,6 @@
       box-shadow: 0 0 0 3px var(--primary-glow);
     }
 
-    .group-input-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-    }
-
     /* Buttons */
     .btn {
       display: inline-flex;
@@ -263,6 +257,7 @@
       border-bottom: 1px solid var(--border);
       padding-bottom: 10px;
       margin-bottom: 20px;
+      flex-wrap: wrap;
     }
 
     .tab-button {
@@ -393,7 +388,7 @@
     /* Network Map Container */
     #networkGraphContainer {
       width: 100%;
-      height: 550px;
+      height: 480px;
       background: #090d13;
       border-radius: var(--radius);
       border: 1px solid var(--border);
@@ -420,6 +415,19 @@
       align-items: center;
       gap: 8px;
       font-size: 12px;
+    }
+
+    .topology-container {
+      background: #000;
+      height: 380px;
+      border-radius: var(--radius);
+      padding: 20px;
+      overflow-y: auto;
+      font-family: var(--font-code);
+      color: #00ff00;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      line-height: 1.5;
     }
 
     /* Vulnerability check panel */
@@ -602,7 +610,7 @@
   <aside>
     <div class="aside-header">
       <h2><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> Net Manager Alfa</h2>
-      <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Enterprise Controller</span>
+      <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Core Orchestrator</span>
     </div>
     
     <div class="user-badge">
@@ -611,14 +619,11 @@
     </div>
 
     <div>
-      <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fa-solid fa-circle-plus"></i> Nodo / Provisioning</h3>
+      <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fa-solid fa-circle-plus"></i> Provisioning Apparato</h3>
       
       <div class="form-group">
-        <label>Sede o Cliente (Gruppo)</label>
-        <div class="group-input-row">
-          <select id="devGroup"></select>
-          <button class="btn btn-secondary btn-small" onclick="openGroupModal()" style="padding:10px;"><i class="fa-solid fa-folder-gear"></i></button>
-        </div>
+        <label>Assegna a Gruppo/Sede</label>
+        <select id="devGroupSelect"></select>
       </div>
       
       <div class="form-group">
@@ -630,12 +635,12 @@
       </div>
       
       <div class="form-group">
-        <label>Driver Vendor</label>
+        <label>Vendor Engine</label>
         <div class="input-wrapper">
           <i class="fa-solid fa-gears"></i>
           <select id="devVendor" style="padding-left:36px;">
-            <option value="cisco">Cisco IOS Driver</option>
-            <option value="hpe">HPE ProCurve Driver</option>
+            <option value="cisco">Cisco IOS</option>
+            <option value="hpe">HPE ProCurve</option>
           </select>
         </div>
       </div>
@@ -667,26 +672,36 @@
       </div>
       
       <button class="btn btn-primary" id="btnSaveDevice" style="margin-top: 10px;">
-        <i class="fa-solid fa-floppy-disk"></i> Salva / Aggiorna
+        <i class="fa-solid fa-floppy-disk"></i> Salva Apparato
       </button>
     </div>
     
     <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: auto;">
-      <h3 style="font-size: 14px; margin-bottom: 10px;"><i class="fa-solid fa-filter"></i> Filtra Vista</h3>
+      <h3 style="font-size: 14px; margin-bottom: 10px;"><i class="fa-solid fa-folder-plus"></i> Aggiungi Nuovo Gruppo</h3>
       <div class="form-group">
-        <select id="filterGroupSelect" onchange="filterInventory()" style="padding-left:12px;"></select>
+        <label>Nome Gruppo</label>
+        <input id="newGroupName" type="text" placeholder="Es. Sede_Torino" style="padding-left:12px;">
       </div>
+      <button class="btn btn-primary" id="btnCreateGroup" style="background:#5ecf8d; color:#000;">
+        <i class="fa-solid fa-folder-plus"></i> Crea Gruppo
+      </button>
     </div>
   </aside>
 
   <!-- Area Centrale Principale -->
   <main>
     <div class="tab-nav">
-      <button class="tab-button active" onclick="switchTab('tab-inventory')">
+      <button class="tab-button active" onclick="switchTab('tab-devices')">
         <i class="fa-solid fa-list-check"></i> Network Inventory
       </button>
-      <button class="tab-button" onclick="switchTab('tab-network-map')">
-        <i class="fa-solid fa-circle-nodes"></i> Mappa di Rete
+      <button class="tab-button" onclick="switchTab('tab-groups')">
+        <i class="fa-solid fa-folder-open"></i> Gestione Gruppi/Sedi
+      </button>
+      <button class="tab-button" onclick="switchTab('tab-map')">
+        <i class="fa-solid fa-route"></i> CDP/LLDP Adjacency List
+      </button>
+      <button class="tab-button" onclick="switchTab('tab-map-interactive')">
+        <i class="fa-solid fa-circle-nodes"></i> Mappa Topologia 2D
       </button>
       <button class="tab-button" onclick="switchTab('tab-security')">
         <i class="fa-solid fa-shield-virus"></i> Threat Intel (EUVD)
@@ -696,12 +711,12 @@
       </button>
     </div>
 
-    <!-- TAB 1: Network Inventory -->
-    <div id="tab-inventory" class="tab-content active">
+    <!-- TAB 1: Network Inventory (Dispositivi) -->
+    <div id="tab-devices" class="tab-content active">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-        <h3>Gestione Dispositivi</h3>
-        <button class="btn btn-primary btn-small" id="btnRunTriage" style="background: var(--warning); color: #000;">
-          <i class="fa-solid fa-bolt-lightning"></i> Avvia Triage Globale
+        <h3>Dispositivi di Rete Sotto Monitoraggio</h3>
+        <button class="btn btn-primary btn-small" id="btnRunTriage" style="background: var(--warning); color: #000; width: auto;">
+          <i class="fa-solid fa-bolt-lightning"></i> Avvia Triage Globale (Background)
         </button>
       </div>
       
@@ -710,39 +725,68 @@
           <thead>
             <tr>
               <th>Stato</th>
-              <th>Gruppo/Sede</th>
+              <th>Gruppo</th>
               <th>Indirizzo IP</th>
               <th>Vendor</th>
               <th>Firmware</th>
-              <th>Azioni / Esportazione</th>
+              <th>Azioni / Utility</th>
             </tr>
           </thead>
-          <tbody id="inventoryTableBody"></tbody>
+          <tbody id="deviceTableBody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- TAB 2: Mappa di Rete Interattiva -->
-    <div id="tab-network-map" class="tab-content">
+    <!-- TAB 2: Gestione Gruppi/Sedi -->
+    <div id="tab-groups" class="tab-content">
+      <h3>Anagrafica Gruppi, Clienti e Sedi Locali</h3>
+      <p style="color: var(--text-muted); font-size: 13px; margin-top: 5px; margin-bottom: 15px;">
+        I gruppi organizzano logicamente la topologia dei tuoi asset. L'eliminazione di un gruppo sposta i dispositivi associati nel gruppo Generale.
+      </p>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome Sede / Cliente</th>
+              <th>Descrizione Metadati</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="groupsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: Mappa Topologica Adjacency List -->
+    <div id="tab-map" class="tab-content">
+      <h3>Mappa Topologica Adjacency List (Deducibile dai Backup)</h3>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">
+        Il sistema estrae le relazioni di prossimità fisiche analizzando le tabelle dei vicini all'interno delle configurazioni di backup salvate.
+      </p>
+      <div id="topologyView" class="topology-container">> In attesa di elaborazione...</div>
+    </div>
+
+    <!-- TAB 4: Mappa Topologia 2D (Premium Vis.js) -->
+    <div id="tab-map-interactive" class="tab-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-        <h3>Topologia di Rete (CDP / LLDP)</h3>
-        <button class="btn btn-secondary btn-small" onclick="loadNetworkMap()">
-          <i class="fa-solid fa-arrows-rotate"></i> Aggiorna Mappa
+        <h3>Topologia Dinamica 2D Interactive</h3>
+        <button class="btn btn-secondary btn-small" onclick="loadInteractiveMap()" style="width: auto;">
+          <i class="fa-solid fa-arrows-rotate"></i> Aggiorna Vista
         </button>
       </div>
       
       <div style="position: relative; flex-grow: 1;">
         <div id="networkGraphContainer"></div>
         <div class="network-legend">
-          <div class="legend-item"><span class="led led-online"></span>Dispositivo Online (Inventario)</div>
-          <div class="legend-item"><span class="led led-offline"></span>Dispositivo Offline (Inventario)</div>
+          <div class="legend-item"><span class="led led-online"></span>Dispositivo Online</div>
+          <div class="legend-item"><span class="led led-offline"></span>Dispositivo Offline</div>
           <div class="legend-item"><span class="led led-auth_failed"></span>Autenticazione Fallita</div>
           <div class="legend-item"><span class="led led-discovered"></span>Vicino Discoperto (CDP/LLDP)</div>
         </div>
       </div>
     </div>
 
-    <!-- TAB 3: Threat Intel (EUVD) -->
+    <!-- TAB 5: Threat Intel (EUVD ENISA) -->
     <div id="tab-security" class="tab-content">
       <div style="margin-bottom: 20px;">
         <h3>Vulnerability Matcher (EUVD ENISA)</h3>
@@ -756,7 +800,7 @@
       </div>
     </div>
 
-    <!-- TAB 4: Importazione CSV -->
+    <!-- TAB 6: Importazione CSV -->
     <div id="tab-import" class="tab-content">
       <h3>Importazione Massiva da CSV</h3>
       <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">
@@ -775,31 +819,6 @@
       </button>
     </div>
   </main>
-
-  <!-- Modal Gestione Gruppi/Sedi -->
-  <div class="modal-overlay" id="groupModalOverlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-folder-gear" style="color: var(--primary);"></i> Gestione Gruppi / Sedi</h3>
-        <i class="fa-solid fa-xmark modal-close" onclick="closeGroupModal()"></i>
-      </div>
-      
-      <div style="margin-bottom: 20px;">
-        <div class="form-group">
-          <label>Nuovo Gruppo</label>
-          <div class="group-input-row">
-            <input id="newGroupNameInput" type="text" placeholder="Es. Cliente_Beta" style="padding-left:12px;">
-            <button class="btn btn-primary btn-small" onclick="createGroup()"><i class="fa-solid fa-plus"></i></button>
-          </div>
-        </div>
-      </div>
-      
-      <h4 style="margin-bottom: 10px; font-size: 13px; text-transform: uppercase; color: var(--text-muted);">Gruppi Esistenti</h4>
-      <div id="modalGroupsList" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); padding: 8px; border-radius: 8px; background: var(--surface-2);">
-        <!-- Lista dei gruppi in dinamico -->
-      </div>
-    </div>
-  </div>
 
   <!-- Progress Box dei Job in Background -->
   <div class="progress-overlay" id="triageProgressBox">
@@ -840,7 +859,7 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
 
   <script>
     let globalDevices = [];
-    let globalGroups = [];
+    let globalGroups = {};
     let isTriagePolling = false;
 
     // --- AUTENTICAZIONE E UTILITY ---
@@ -876,7 +895,7 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
                 localStorage.setItem("net_token", data.access_token);
                 document.getElementById("loginError").style.display = "none";
                 document.getElementById("login-overlay").style.display = "none";
-                initializeApp();
+                appInit();
             } else {
                 document.getElementById("loginError").style.display = "block";
             }
@@ -890,93 +909,79 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
         document.getElementById("login-overlay").style.display = "flex";
     }
 
-    // --- INIZIALIZZAZIONE E CARICAMENTO DATI ---
+    // --- INITIALIZATION ---
 
-    async function initializeApp() {
+    async function appInit() {
         if (!checkAuth()) return;
-        await loadGroups();
-        await loadInventory();
-        startTriageStatusPolling();
-    }
+        
+        try {
+            const res = await fetch('/api/local-devices', { headers: getAuthHeaders() });
+            if (res.status === 401) { logout(); return; }
+            const data = await res.json();
+            
+            globalDevices = data.devices;
+            globalGroups = data.groups;
 
-    async function loadGroups() {
-        const res = await fetch("/api/groups", { headers: getAuthHeaders() });
-        if (res.status === 401) { logout(); return; }
-        
-        globalGroups = await res.json();
-        
-        // Popola select del form
-        const devGroupSelect = document.getElementById("devGroup");
-        devGroupSelect.innerHTML = "";
-        globalGroups.forEach(g => {
-            devGroupSelect.innerHTML += `<option value="${g}">${g}</option>`;
-        });
+            // Popola tendina Gruppi nel form
+            const groupSelect = document.getElementById('devGroupSelect');
+            groupSelect.innerHTML = '';
+            Object.keys(globalGroups).forEach(g => {
+                groupSelect.innerHTML += `<option value="${g}">${g}</option>`;
+            });
 
-        // Popola select del filtro
-        const filterGroupSelect = document.getElementById("filterGroupSelect");
-        const prevFilterVal = filterGroupSelect.value;
-        filterGroupSelect.innerHTML = `<option value="ALL">-- Mostra Tutti --</option>`;
-        globalGroups.forEach(g => {
-            filterGroupSelect.innerHTML += `<option value="${g}">${g}</option>`;
-        });
-        filterGroupSelect.value = prevFilterVal || "ALL";
-    }
+            // Popola Tabella Dispositivi
+            const devBody = document.getElementById('deviceTableBody');
+            devBody.innerHTML = '';
+            globalDevices.forEach(d => {
+                const scan = data.detected_versions[d.IP] || { version: "Non Scansionato", status: "unknown" };
+                let ledClass = "led-offline";
+                if (scan.status === "online") ledClass = "led-online";
+                else if (scan.status === "auth_failed") ledClass = "led-auth_failed";
 
-    async function loadInventory() {
-        const res = await fetch("/api/local-devices", { headers: getAuthHeaders() });
-        if (res.status === 401) { logout(); return; }
-        
-        const data = await res.json();
-        globalDevices = data.devices;
-        renderTable(globalDevices, data.detected_versions);
-        
-        // Se la tab attiva è Threat Intel, aggiornala
-        if (document.getElementById("tab-security").classList.contains("active")) {
-            loadThreatIntel(data.detected_versions);
+                devBody.innerHTML += `<tr>
+                    <td>
+                      <span class="led-container">
+                        <span class="led ${ledClass}"></span>
+                        ${scan.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td><span class="badge">${d.Group}</span></td>
+                    <td><strong>${d.IP}</strong></td>
+                    <td>${d.Vendor.toUpperCase()}</td>
+                    <td><code>${scan.version}</code></td>
+                    <td class="actions-cell">
+                        <button class="btn btn-secondary btn-small" style="margin:0; padding: 4px 8px;" onclick="openCliModal('${d.IP}')"><i class="fa-solid fa-terminal"></i> CLI</button>
+                        <button class="btn btn-primary btn-small" style="margin:0; width:auto; background:#3be188; color:#000; padding: 4px 8px;" onclick="downloadBackup('${d.IP}')"><i class="fa-solid fa-download"></i></button>
+                        <button class="btn btn-danger btn-small" style="margin:0; padding: 4px 8px; background:none; border:none; color:var(--danger); cursor:pointer;" onclick="deleteDevice('${d.IP}')"><i class="fa-solid fa-trash-can"></i> Elimina</button>
+                    </td>
+                </tr>`;
+            });
+
+            // Popola Tabella Gestione Gruppi
+            const groupBody = document.getElementById('groupsTableBody');
+            groupBody.innerHTML = '';
+            Object.keys(globalGroups).forEach(g => {
+                const desc = globalGroups[g].description || "Sede Logica";
+                groupBody.innerHTML += `<tr>
+                    <td><strong>${g}</strong></td>
+                    <td><span style="color:var(--text-muted); font-size:13px;">${desc}</span></td>
+                    <td>${g !== 'Generale' ? `<button onclick="deleteGroup('${g}')" style="color:var(--danger); background:none; border:none; cursor:pointer;"><i class="fa-solid fa-trash-can"></i> Elimina Sede</button>` : 'System Reserved'}</td>
+                </tr>`;
+            });
+
+            // Se la tab attiva è Threat Intel, aggiornala
+            if (document.getElementById("tab-security").classList.contains("active")) {
+                loadThreatIntel(data.detected_versions);
+            }
+            
+            startTriageStatusPolling();
+
+        } catch (err) {
+            console.error(err);
         }
     }
 
-    function renderTable(devices, versions) {
-        const tbody = document.getElementById('inventoryTableBody');
-        tbody.innerHTML = '';
-
-        const selectedGroup = document.getElementById('filterGroupSelect').value;
-
-        devices.forEach(d => {
-            const group = d.Group || 'Generale';
-            if (selectedGroup !== 'ALL' && group !== selectedGroup) return;
-
-            const scan = versions[d.IP] || { version: "Non Rilevata", status: "unknown" };
-            let ledClass = "led-offline";
-            if (scan.status === "online") ledClass = "led-online";
-            else if (scan.status === "auth_failed") ledClass = "led-auth_failed";
-
-            tbody.innerHTML += `<tr>
-                <td>
-                  <span class="led-container">
-                    <span class="led ${ledClass}"></span>
-                    ${scan.status.toUpperCase()}
-                  </span>
-                </td>
-                <td><span class="badge">${group}</span></td>
-                <td><strong>${d.IP}</strong></td>
-                <td>${d.Vendor.toUpperCase()}</td>
-                <td><code>${scan.version}</code></td>
-                <td class="actions-cell">
-                    <button class="btn btn-secondary btn-small" style="margin:0;" onclick="editDevice('${d.IP}')"><i class="fa-solid fa-pen-to-square"></i></button>
-                    <button class="btn btn-secondary btn-small" style="margin:0;" onclick="openCliModal('${d.IP}')"><i class="fa-solid fa-terminal"></i></button>
-                    <button class="btn btn-primary btn-small" style="margin:0; width:auto; background:#3be188; color:#000;" onclick="downloadBackup('${d.IP}')"><i class="fa-solid fa-download"></i></button>
-                    <button class="btn btn-danger btn-small" style="margin:0;" onclick="deleteDevice('${d.IP}')"><i class="fa-solid fa-trash-can"></i></button>
-                </td>
-            </tr>`;
-        });
-    }
-
-    function filterInventory() {
-        loadInventory();
-    }
-
-    // --- FORM DEVICE CRUD ---
+    // --- DEVICE CRUD ---
 
     document.getElementById('devProfile').addEventListener('change', (e) => {
         document.getElementById('customCredsForm').style.display = e.target.value === 'custom' ? 'block' : 'none';
@@ -984,241 +989,122 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
 
     document.getElementById('btnSaveDevice').addEventListener('click', async () => {
         const payload = {
-            ip: document.getElementById('devIp').value,
+            ip: document.getElementById('devIp').value.trim(),
             vendor: document.getElementById('devVendor').value,
             profile: document.getElementById('devProfile').value,
             username: document.getElementById('devUser').value,
             password: document.getElementById('devPass').value,
             enable_secret: document.getElementById('devSecret').value,
-            group: document.getElementById('devGroup').value
+            group: document.getElementById('devGroupSelect').value
         };
-        
-        if (!payload.ip) { alert("Inserisci l'IP dell'apparato."); return; }
 
-        const res = await fetch('/api/add-device', {
+        if(!payload.ip) { alert("Inserisci l'IP del dispositivo."); return; }
+
+        const res = await fetch('/api/add-device', { 
             method: 'POST', 
-            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, 
-            body: JSON.stringify(payload)
+            headers: {'Content-Type': 'application/json', ...getAuthHeaders()}, 
+            body: JSON.stringify(payload) 
         });
-        if (res.ok) {
-            alert("Dispositivo salvato con successo!");
-            // Svuota i campi
-            document.getElementById('devIp').value = "";
-            document.getElementById('devProfile').value = "default";
-            document.getElementById('customCredsForm').style.display = "none";
-            
-            await loadGroups();
-            loadInventory();
+        if(res.ok) {
+            document.getElementById('devIp').value = '';
+            document.getElementById('devProfile').value = 'default';
+            document.getElementById('customCredsForm').style.display = 'none';
+            appInit();
         } else {
             const err = await res.json();
             alert(`Errore: ${err.detail || "Impossibile salvare il dispositivo"}`);
         }
     });
 
-    function editDevice(ip) {
-        const d = globalDevices.find(item => item.IP === ip);
-        if (d) {
-            document.getElementById('devIp').value = d.IP;
-            document.getElementById('devVendor').value = d.Vendor;
-            document.getElementById('devProfile').value = d.Profile;
-            document.getElementById('devGroup').value = d.Group || 'Generale';
-            if (d.Profile === 'custom') {
-                document.getElementById('customCredsForm').style.display = 'block';
-                document.getElementById('devUser').value = d.Username;
-                document.getElementById('devPass').value = d.Password;
-                document.getElementById('devSecret').value = d['Enable Secret'];
-            } else {
-                document.getElementById('customCredsForm').style.display = 'none';
-            }
-        }
-    }
-
     async function deleteDevice(ip) {
-        if (confirm(`Sicuro di voler rimuovere l'apparato ${ip}?`)) {
-            const res = await fetch('/api/delete-device', {
+        if(confirm(`Sicuro di voler rimuovere il dispositivo ${ip}?`)) {
+            await fetch('/api/delete-device', { 
                 method: 'POST', 
-                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, 
-                body: JSON.stringify({ ip: ip })
+                headers: {'Content-Type': 'application/json', ...getAuthHeaders()}, 
+                body: JSON.stringify({ ip: ip }) 
             });
-            if (res.ok) {
-                loadInventory();
-            }
+            appInit();
         }
     }
 
-    function downloadBackup(ip) {
-        // Avvia il download del backup. L'endpoint risolve in modo intelligente il file
-        window.location.href = `/api/download-backup/${ip}?access_token=${localStorage.getItem("net_token")}`;
-    }
+    // --- GRUPPI CRUD ---
 
-    // --- GRUPPI MODAL CRUD ---
-
-    function openGroupModal() {
-        document.getElementById("groupModalOverlay").style.display = "flex";
-        renderModalGroupsList();
-    }
-
-    function closeGroupModal() {
-        document.getElementById("groupModalOverlay").style.display = "none";
-    }
-
-    function renderModalGroupsList() {
-        const container = document.getElementById("modalGroupsList");
-        container.innerHTML = "";
-        globalGroups.forEach(g => {
-            const isGeneral = g === "Generale";
-            container.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; padding: 6px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                <span><strong>${g}</strong></span>
-                ${isGeneral ? `<span style="font-size:10px; color:var(--text-muted);">Default</span>` : `
-                <div style="display:flex; gap: 4px;">
-                    <button class="btn btn-secondary btn-small" style="padding:4px 8px;" onclick="renameGroupPrompt('${g}')"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn btn-danger btn-small" style="padding:4px 8px;" onclick="deleteGroup('${g}')"><i class="fa-solid fa-trash-can"></i></button>
-                </div>
-                `}
-            </div>`;
+    document.getElementById('btnCreateGroup').addEventListener('click', async () => {
+        const name = document.getElementById('newGroupName').value.trim();
+        if(!name) return;
+        
+        const res = await fetch('/api/groups', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json', ...getAuthHeaders()}, 
+            body: JSON.stringify({ name: name, description: `Sede secondaria ${name}` }) 
         });
-    }
-
-    async function createGroup() {
-        const input = document.getElementById("newGroupNameInput");
-        const groupName = input.value.trim();
-        if (!groupName) return;
-
-        const res = await fetch("/api/groups", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-            body: JSON.stringify({ group_name: groupName })
-        });
-        if (res.ok) {
-            input.value = "";
-            await loadGroups();
-            renderModalGroupsList();
+        if(res.ok) {
+            document.getElementById('newGroupName').value = '';
+            appInit();
         } else {
             alert("Errore durante la creazione del gruppo.");
         }
-    }
-
-    async function renameGroupPrompt(oldName) {
-        const newName = prompt(`Nuovo nome per il gruppo "${oldName}":`, oldName);
-        if (!newName || newName.trim() === oldName) return;
-
-        const res = await fetch(`/api/groups/${oldName}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-            body: JSON.stringify({ new_name: newName.trim() })
-        });
-        if (res.ok) {
-            await loadGroups();
-            renderModalGroupsList();
-            loadInventory();
-        }
-    }
-
-    async function deleteGroup(name) {
-        if (confirm(`Sicuro di voler eliminare il gruppo "${name}"? Tutti i dispositivi al suo interno verranno riassegnati a "Generale".`)) {
-            const res = await fetch(`/api/groups/${name}`, {
-                method: "DELETE",
-                headers: getAuthHeaders()
-            });
-            if (res.ok) {
-                await loadGroups();
-                renderModalGroupsList();
-                loadInventory();
-            }
-        }
-    }
-
-    // --- TERMINAL CLI INTERACTIVE ---
-
-    let currentCliIp = "";
-
-    function openCliModal(ip) {
-        currentCliIp = ip;
-        document.getElementById("cliTargetIp").innerText = ip;
-        document.getElementById("cliOutputConsole").innerText = `Console aperta per ${ip}.\nConsiglio: invia un comando CLI...`;
-        document.getElementById("cliModalOverlay").style.display = "flex";
-    }
-
-    function closeCliModal() {
-        document.getElementById("cliModalOverlay").style.display = "none";
-    }
-
-    async function sendCommand() {
-        const input = document.getElementById("cliCommandInput");
-        const cmd = input.value.trim();
-        if (!cmd) return;
-
-        const consoleBox = document.getElementById("cliOutputConsole");
-        consoleBox.innerText += `\n\n> Inviando: ${cmd}\n`;
-        input.value = "";
-        consoleBox.scrollTop = consoleBox.scrollHeight;
-
-        try {
-            const res = await fetch("/api/send-command", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-                body: JSON.stringify({ ip: currentCliIp, command: cmd })
-            });
-            const data = await res.json();
-            if (data.status === "success") {
-                consoleBox.innerText += `\n${data.output}`;
-            } else {
-                consoleBox.innerText += `\nErrore: ${data.message}`;
-            }
-        } catch (e) {
-            consoleBox.innerText += `\nErrore di comunicazione: ${e}`;
-        }
-        consoleBox.scrollTop = consoleBox.scrollHeight;
-    }
-
-    // --- BACKGROUND JOBS (TRIAGE STATUS POLLING) ---
-
-    document.getElementById("btnRunTriage").addEventListener("click", async () => {
-        const res = await fetch("/api/run-triage", { method: "POST", headers: getAuthHeaders() });
-        if (res.ok) {
-            startTriageStatusPolling();
-        }
     });
 
-    function startTriageStatusPolling() {
-        if (isTriagePolling) return;
-        isTriagePolling = true;
-        pollTriageStatus();
-    }
-
-    async function pollTriageStatus() {
-        try {
-            const res = await fetch("/api/triage-status", { headers: getAuthHeaders() });
-            if (!res.ok) { isTriagePolling = false; return; }
-            const statusData = await res.json();
-            
-            const pbox = document.getElementById("triageProgressBox");
-            if (statusData.status === "running") {
-                pbox.style.display = "flex";
-                const total = statusData.total || 1;
-                const progress = statusData.progress || 0;
-                const pct = Math.round((progress / total) * 100);
-                
-                document.getElementById("triageProgressPct").innerText = `${pct}%`;
-                document.getElementById("triageProgressMsg").innerText = `Elaborazione: ${statusData.current_device} (${progress}/${total})`;
-                document.getElementById("triageProgressBarFill").style.width = `${pct}%`;
-                
-                setTimeout(pollTriageStatus, 1500);
+    async function deleteGroup(name) {
+        if(confirm(`Eliminare la sede ${name}? Tutti i dispositivi associati passeranno al gruppo Generale.`)) {
+            const res = await fetch('/api/groups/delete', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json', ...getAuthHeaders()}, 
+                body: JSON.stringify({ name: name }) 
+            });
+            if(res.ok) {
+                appInit();
             } else {
-                pbox.style.display = "none";
-                isTriagePolling = false;
-                loadInventory();
+                alert("Impossibile eliminare il gruppo.");
             }
-        } catch {
-            isTriagePolling = false;
         }
     }
 
-    // --- TAB 2: INTERACTIVE NETWORK MAP (VIS.JS) ---
+    // --- TABS & TOPOLOGY LIST VIEW ---
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        
+        if(tabId === 'tab-map') loadTopology();
+        else if(tabId === 'tab-map-interactive') loadInteractiveMap();
+        else if(tabId === 'tab-security') {
+            fetch('/api/local-devices', { headers: getAuthHeaders() }).then(res => res.json()).then(data => {
+                loadThreatIntel(data.detected_versions);
+            });
+        }
+    }
+
+    async function loadTopology() {
+        const view = document.getElementById('topologyView');
+        view.innerHTML = "> Analisi euristica dei vicini CDP/LLDP in corso...\n";
+        
+        try {
+            const res = await fetch('/api/topology', { headers: getAuthHeaders() });
+            const data = await res.json();
+            
+            if(!data.links || data.links.length === 0) {
+                view.innerHTML = "> Nessun collegamento fisicamente individuato.\nAssicurati che i backup configurazione contengano tabelle dei vicini LLDP/CDP.";
+                return;
+            }
+            
+            view.innerHTML = "=== COLLEGAMENTI INFRASTRUTTURA FISICA RILEVATI ===\n\n";
+            data.links.forEach(l => {
+                view.innerHTML += `[Nodo: ${l.source}] <-------- INTERCONNESSIONE CDP/LLDP --------> [Nodo: ${l.target}]\n`;
+            });
+        } catch(e) {
+            view.innerHTML = `> Errore durante il caricamento della topologia: ${e}`;
+        }
+    }
+
+    // --- VIS.JS TOPOLOGY GRAPH VIEW ---
 
     let networkInstance = null;
 
-    async function loadNetworkMap() {
+    async function loadInteractiveMap() {
         const res = await fetch("/api/network-map", { headers: getAuthHeaders() });
         if (!res.ok) return;
         const data = await res.json();
@@ -1275,7 +1161,7 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
             return {
                 from: l.source,
                 to: l.target,
-                label: `L: ${l.local_port} -> R: ${l.remote_port}`,
+                label: l.local_port && l.local_port !== 'Vicino' ? `L: ${l.local_port} -> R: ${l.remote_port}` : 'Link',
                 font: { color: "#8d9bb0", size: 10, face: "JetBrains Mono", strokeWidth: 0 },
                 color: { color: "rgba(44, 188, 195, 0.4)", highlight: "#2cbcc3" },
                 arrows: { to: { enabled: false } },
@@ -1298,16 +1184,101 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
         networkInstance = new vis.Network(container, graphData, options);
     }
 
-    // --- TAB 3: THREAT INTEL VULNERABILITY CHECKER (EUVD) ---
+    // --- TERMINAL CLI INTERACTIVE ---
+
+    let currentCliIp = "";
+
+    function openCliModal(ip) {
+        currentCliIp = ip;
+        document.getElementById("cliTargetIp").innerText = ip;
+        document.getElementById("cliOutputConsole").innerText = `Console aperta per ${ip}.\nConsiglio: invia un comando CLI...`;
+        document.getElementById("cliModalOverlay").style.display = "flex";
+    }
+
+    function closeCliModal() {
+        document.getElementById("cliModalOverlay").style.display = "none";
+    }
+
+    async function sendCommand() {
+        const input = document.getElementById("cliCommandInput");
+        const cmd = input.value.trim();
+        if (!cmd) return;
+
+        const consoleBox = document.getElementById("cliOutputConsole");
+        consoleBox.innerText += `\n\n> Inviando: ${cmd}\n`;
+        input.value = "";
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+
+        try {
+            const res = await fetch("/api/send-command", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+                body: JSON.stringify({ ip: currentCliIp, command: cmd })
+            });
+            const data = await res.json();
+            if (data.status === "success") {
+                consoleBox.innerText += `\n${data.output}`;
+            } else {
+                consoleBox.innerText += `\nErrore: ${data.message}`;
+            }
+        } catch (e) {
+            consoleBox.innerText += `\nErrore di comunicazione: ${e}`;
+        }
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+
+    // --- BACKGROUND JOBS (polling triage in background) ---
+
+    document.getElementById("btnRunTriage").addEventListener("click", async () => {
+        const res = await fetch("/api/run-triage", { method: "POST", headers: getAuthHeaders() });
+        if (res.ok) {
+            startTriageStatusPolling();
+        }
+    });
+
+    function startTriageStatusPolling() {
+        if (isTriagePolling) return;
+        isTriagePolling = true;
+        pollTriageStatus();
+    }
+
+    async function pollTriageStatus() {
+        try {
+            const res = await fetch("/api/triage-status", { headers: getAuthHeaders() });
+            if (!res.ok) { isTriagePolling = false; return; }
+            const statusData = await res.json();
+            
+            const pbox = document.getElementById("triageProgressBox");
+            if (statusData.status === "running") {
+                pbox.style.display = "flex";
+                const total = statusData.total || 1;
+                const progress = statusData.progress || 0;
+                const pct = Math.round((progress / total) * 100);
+                
+                document.getElementById("triageProgressPct").innerText = `${pct}%`;
+                document.getElementById("triageProgressMsg").innerText = `Elaborazione: ${statusData.current_device} (${progress}/${total})`;
+                document.getElementById("triageProgressBarFill").style.width = `${pct}%`;
+                
+                setTimeout(pollTriageStatus, 1500);
+            } else {
+                pbox.style.display = "none";
+                isTriagePolling = false;
+                appInit();
+            }
+        } catch {
+            isTriagePolling = false;
+        }
+    }
+
+    // --- VULNERABILITY ADVISORY (EUVD) ---
 
     async function loadThreatIntel(versions) {
         const container = document.getElementById("securityTriageContainer");
         container.innerHTML = `<div style="text-align:center; padding: 40px; color:var(--text-muted);"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><br><br>Interrogando database ENISA EUVD...</div>`;
 
-        const devices = globalDevices;
-        let onlineDevices = devices.filter(d => {
+        let onlineDevices = globalDevices.filter(d => {
             const v = versions[d.IP];
-            return v && v.status === "online" && v.version !== "Non Rilevata" && v.version !== "Unknown";
+            return v && v.status === "online" && v.version !== "Non Scansionato" && v.version !== "Unknown";
         });
 
         if (onlineDevices.length === 0) {
@@ -1322,7 +1293,6 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
         for (const d of onlineDevices) {
             const scan = versions[d.IP];
             
-            // Creiamo un wrapper card per questo dispositivo
             const devCard = document.createElement("div");
             devCard.className = "vuln-card";
             devCard.innerHTML = `
@@ -1338,8 +1308,6 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
             `;
             container.appendChild(devCard);
 
-            // Interroga il database tramite il nostro proxy locale
-            // Cerchiamo le vulnerabilità filtrando per il vendor e text=versione del firmware
             const queryUrl = `/api/search?vendor=${encodeURIComponent(d.Vendor)}&text=${encodeURIComponent(scan.version)}&size=3`;
             
             try {
@@ -1349,19 +1317,14 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
 
                 if (res.ok) {
                     const vulnData = await res.json();
-                    
-                    // La risposta EUVD solitamente ha un array nella chiave "results" o simile.
-                    // Adattiamoci ai due formati comuni di EUVD response
                     const items = vulnData.results || vulnData.content || vulnData || [];
 
                     if (items.length > 0) {
                         statusLabel.innerHTML = `<span style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> ${items.length} Vulnerabilità Rilevate</span>`;
-                        
-                        // Renderizziamo i primi 3 CVE trovati
                         items.slice(0, 3).forEach(v => {
                             const enisaId = v.enisaId || v.id || "EUVD-Unknown";
                             const cveId = v.cveId || v.cve || "N/A";
-                            const description = v.description || v.summary || "Descrizione non disponibile in lingua italiana.";
+                            const description = v.description || v.summary || "Descrizione non disponibile.";
                             const score = v.cvssScore || v.score || "N/A";
                             
                             let severity = "MEDIUM";
@@ -1383,49 +1346,32 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
                                         <span class="severity-pill severity-${severity}">CVSS: ${score}</span>
                                     </div>
                                     <div style="color:var(--text-muted); margin-bottom:6px; line-height:1.4;">${description}</div>
-                                    <div style="font-size:10px; color:var(--primary);"><i class="fa-solid fa-scale-balanced"></i> Rilevante per requisiti NIS2 & ENISA</div>
+                                    <div style="font-size:10px; color:var(--primary);"><i class="fa-solid fa-scale-balanced"></i> Rilevante per NIS2</div>
                                 </div>
                             `;
                         });
                     } else {
-                        statusLabel.innerHTML = `<span style="color: var(--success);"><i class="fa-solid fa-circle-check"></i> Firmware Sicuro</span>`;
+                        statusLabel.innerHTML = `<span style="color: var(--success);"><i class="fa-solid fa-circle-check"></i> Release Sicura</span>`;
                         resultsContainer.innerHTML = `<div style="color:var(--text-muted); font-size:13px; font-style:italic;">Nessuna minaccia nota trovata nel database europeo ENISA EUVD per questa release.</div>`;
                     }
                 } else {
-                    statusLabel.innerHTML = `<span style="color: var(--warning);"><i class="fa-solid fa-triangle-exclamation"></i> Errore Database</span>`;
-                    resultsContainer.innerHTML = `<div style="color:var(--text-muted); font-size:13px;">Impossibile comunicare con il Database EUVD ENISA. Riprova più tardi.</div>`;
+                    statusLabel.innerHTML = `<span style="color: var(--warning);"><i class="fa-solid fa-triangle-exclamation"></i> Errore match</span>`;
                 }
             } catch (err) {
-                document.getElementById(`status-${d.IP.replace(/\./g, '-')}`).innerHTML = `<span style="color: var(--warning);">Errore</span>`;
+                document.getElementById(`status-${d.IP.replace(/\./g, '-')}`).innerHTML = `Errore`;
             }
         }
     }
 
-    // --- TAB MANAGEMENT ---
-
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        
-        // Imposta attiva la tab che ha scatenato l'evento
-        event.currentTarget.classList.add('active');
-
-        if (tabId === 'tab-network-map') {
-            loadNetworkMap();
-        } else if (tabId === 'tab-security') {
-            // Riesegue il fetch dell'inventario per avere i firmware e poi carica la Threat Intel
-            fetch("/api/local-devices", { headers: getAuthHeaders() }).then(res => res.json()).then(data => {
-                loadThreatIntel(data.detected_versions);
-            });
-        }
+    function downloadBackup(ip) {
+        window.location.href = `/api/download-backup/${ip}?access_token=${localStorage.getItem("net_token")}`;
     }
 
-    // --- UPLOAD CSV INVENTARIO ---
+    // --- CSV UPLOAD ---
 
     document.getElementById('btnUploadCsv').addEventListener('click', async () => {
         const fileInput = document.getElementById('csvFileInput');
-        if (fileInput.files.length === 0) { alert("Seleziona un file CSV da caricare."); return; }
+        if (fileInput.files.length === 0) { alert("Seleziona un file CSV."); return; }
         
         const file = fileInput.files[0];
         const reader = new FileReader();
@@ -1438,27 +1384,21 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
                     body: JSON.stringify({ csv_data: text })
                 });
                 if(res.ok) {
-                    alert("Importazione massiva completata con successo!");
+                    alert("Importazione completata!");
                     fileInput.value = "";
-                    await loadGroups();
-                    await loadInventory();
-                    
-                    // Ritorna all'inventario
-                    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-                    document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-                    document.getElementById('tab-inventory').classList.add('active');
-                    document.querySelector("[onclick=\"switchTab('tab-inventory')\"]").classList.add('active');
+                    appInit();
+                    switchTab('tab-devices');
                 } else {
-                    alert("Errore durante l'importazione del CSV.");
+                    alert("Errore importazione.");
                 }
             } catch (err) {
-                alert(`Errore di comunicazione: ${err}`);
+                alert(`Errore: ${err}`);
             }
         };
         reader.readAsText(file);
     });
 
-    window.onload = initializeApp;
+    window.onload = appInit;
   </script>
 </body>
 </html>
