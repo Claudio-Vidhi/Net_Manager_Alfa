@@ -2,43 +2,50 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <title>Net Manager Alfa Enterprise</title>
+  <title>Net Manager Alfa Enterprise v2</title>
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,600,900&f[]=jetbrains-mono@400&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #0b1015; --surface: #111821; --surface-2: #16202c; --border: rgba(177,196,214,0.14);
-      --text: #edf3fa; --text-muted: #a8b3c2; --primary: #2cbcc3; --radius: 8px;
+      --text: #edf3fa; --text-muted: #a8b3c2; --primary: #2cbcc3; --danger: #ff6b7c; --radius: 8px;
     }
-    body { font-family: 'Satoshi', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+    body { font-family: 'Satoshi', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
     aside, main { background: var(--surface); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
     
-    /* Sistema di Tab */
     .tab-nav { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-    .tab-button { background: none; border: none; color: var(--text-muted); padding: 8px 16px; cursor: pointer; font-weight: bold; font-size: 16px; }
+    .tab-button { background: none; border: none; color: var(--text-muted); padding: 8px 16px; cursor: pointer; font-weight: bold; font-size: 15px; }
     .tab-button.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
-    /* LED di stato */
     .led { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
     .led-online { background: #5ecf8d; box-shadow: 0 0 8px #5ecf8d; }
-    .led-offline { background: #ff6b7c; box-shadow: 0 0 8px #ff6b7c; }
-    .led-auth { background: #efad4d; box-shadow: 0 0 8px #efad4d; }
-    .led-unknown { background: #7a8797; }
-
+    .led-offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+    
     .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+    .form-group label { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
     .form-group input, .form-group select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-2); color: inherit; }
-    .btn { width: 100%; padding: 10px; background: var(--primary); border: none; color: #000; font-weight: bold; border-radius: 6px; cursor: pointer; }
-    .console { background: #000; color: #00ff00; font-family: 'JetBrains Mono', monospace; padding: 12px; border-radius: 6px; height: 250px; overflow-y: auto; font-size: 13px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
+    
+    .btn { width: 100%; padding: 10px; background: var(--primary); border: none; color: #000; font-weight: bold; border-radius: 6px; cursor: pointer; margin-bottom: 8px; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .actions-cell { display: flex; gap: 8px; }
+    .badge { background: var(--surface-2); padding: 2px 6px; border-radius: 4px; font-size: 12px; border: 1px solid var(--border); }
+    .template-box { background: #000; color: #f0f0f0; font-family: monospace; padding: 10px; border-radius: 6px; font-size: 12px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
 
   <aside>
-    <h2>Controls & Provisioning</h2>
+    <h2>Provisioning Engine</h2>
+    
+    <div class="form-group">
+      <label>Cartella / Cliente / Sede</label>
+      <input id="devGroup" type="text" placeholder="Es. Cliente_Alfa, Sede_Milano">
+    </div>
     <div class="form-group">
       <label>IP Apparato</label>
       <input id="devIp" type="text" placeholder="10.0.0.1">
@@ -54,57 +61,62 @@
       <label>Profilo Credenziali</label>
       <select id="devProfile">
         <option value="default">Profilo Rete Standard</option>
-        <option value="custom">Inserisci credenziali dedicate...</option>
+        <option value="custom">Credenziali dedicate...</option>
       </select>
     </div>
     <div id="customCredsForm" style="display:none;">
-      <div class="form-group"><label>Username</label><input id="devUser" type="text"></div>
-      <div class="form-group"><label>Password</label><input id="devPass" type="password"></div>
-      <div class="form-group"><label>Enable Secret</label><input id="devSecret" type="password"></div>
+      <div class="form-group"><label>Username</label><input id="devUser" type="text" value="Admin"></div>
+      <div class="form-group"><label>Password</label><input id="devPass" type="password" value="admin"></div>
+      <div class="form-group"><label>Enable Secret</label><input id="devSecret" type="password" value="admin"></div>
     </div>
-    <button class="btn" id="btnSaveDevice">Registra Apparato</button>
-    <button class="btn" id="btnRunTriage" style="background:#efad4d; margin-top: 15px;">Avvia Scan & Backup</button>
+    
+    <button class="btn" id="btnSaveDevice">Salva / Aggiorna</button>
+    <button class="btn" id="btnRunTriage" style="background:#efad4d; margin-top: 10px;">Avvia Backup & Triage</button>
+    
+    <div style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 15px;">
+      <h3>Filtra per Sede/Cliente</h3>
+      <select id="filterGroupSelect" onchange="filterInventory()"><option value="ALL">-- Mostra Tutti --</option></select>
+    </div>
   </aside>
 
   <main>
     <div class="tab-nav">
       <button class="tab-button active" onclick="switchTab('tab-inventory')">Network Inventory</button>
+      <button class="tab-button" onclick="switchTab('tab-import')">Importazione CSV Massiva</button>
       <button class="tab-button" onclick="switchTab('tab-security')">Threat Intel (EUVD)</button>
-      <button class="tab-button" onclick="switchTab('tab-cli')">Automation Console</button>
     </div>
 
     <div id="tab-inventory" class="tab-content active">
-      <h3>Mappa degli Apparati di Rete</h3>
+      <h3>Mappa Logica e Gestione Nodi</h3>
       <table>
         <thead>
-          <tr><th>Stato</th><th>Indirizzo IP</th><th>Vendor Engine</th><th>Versione Firmware Rilevata</th></tr>
+          <tr><th>Stato</th><th>Gruppo/Sede</th><th>Indirizzo IP</th><th>Vendor</th><th>Firmware</th><th>Azioni / Esportazione</th></tr>
         </thead>
         <tbody id="inventoryTableBody"></tbody>
       </table>
     </div>
 
-    <div id="tab-security" class="tab-content">
-      <h3>Vulnerability Matcher (Feed Europeo ENISA)</h3>
-      <p>I firmware rilevati vengono confrontati in tempo reale con le definizioni dei bug e dei vettori d'attacco registrati nell'European Vulnerability Database.</p>
-      <div id="securityTriageContainer">Esegui una scansione di rete per popolare il database delle minacce.</div>
+    <div id="tab-import" class="tab-content">
+      <h3>Caricamento file CSV di Inventario</h3>
+      <p>Il file CSV deve contenere tassativamente l'intestazione corretta. Ecco la struttura richiesta:</p>
+      <div class="template-box">IP,Vendor,Profile,Username,Password,Enable Secret,Group<br>192.168.1.1,cisco,default,Admin,pass,secret,Cliente_A<br>192.168.2.1,hpe,custom,Manager,pwd,secret,Sede_Roma</div>
+      
+      <div class="form-group" style="margin-top: 20px;">
+        <label>Seleziona File CSV</label>
+        <input type="file" id="csvFileInput" accept=".csv" />
+      </div>
+      <button class="btn" id="btnUploadCsv">Elabora e Importa CSV</button>
     </div>
 
-    <div id="tab-cli" class="tab-content">
-      <h3>Terminal Orchestrator</h3>
-      <div class="form-group">
-        <label>Target IP</label>
-        <select id="cliTargetSelect"></select>
-      </div>
-      <div class="form-group">
-        <label>Comando CLI</label>
-        <input id="cliCommand" type="text" placeholder="show ip int brief">
-      </div>
-      <button class="btn" id="btnSendCli" style="margin-bottom: 15px;">Invia Comando di Configurazione</button>
-      <div class="console" id="consoleOutput">> Terminale pronto ad accettare comandi remoti...</div>
+    <div id="tab-security" class="tab-content">
+      <h3>Vulnerability Matcher (EUVD)</h3>
+      <div id="securityTriageContainer">Esegui una scansione di rete per popolare la telemetria.</div>
     </div>
   </main>
 
   <script>
+    let globalDevices = [];
+
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
@@ -119,27 +131,57 @@
     async function loadInventory() {
         const res = await fetch('/api/local-devices');
         const data = await res.json();
-        const tbody = document.getElementById('inventoryTableBody');
-        const select = document.getElementById('cliTargetSelect');
+        globalDevices = data.devices;
         
-        tbody.innerHTML = '';
-        select.innerHTML = '';
+        // Popola i filtri dei gruppi
+        const groupSelect = document.getElementById('filterGroupSelect');
+        const currentGroupFilter = groupSelect.value;
+        const groups = new Set(['ALL']);
+        globalDevices.forEach(d => groups.add(d.Group || 'Generale'));
+        
+        groupSelect.innerHTML = '';
+        groups.forEach(g => {
+            groupSelect.innerHTML += `<option value="${g}">${g === 'ALL' ? '-- Mostra Tutti --' : g}</option>`;
+        });
+        groupSelect.value = currentGroupFilter || 'ALL';
 
-        data.devices.forEach(d => {
-            const scan = data.detected_versions[d.IP] || { version: "Non Rilevata", status: "unknown" };
-            let ledClass = "led-unknown";
-            if(scan.status === "online") ledClass = "led-online";
-            if(scan.status === "offline") ledClass = "led-offline";
-            if(scan.status === "auth_failed") ledClass = "led-auth";
+        renderTable(globalDevices, data.detected_versions);
+    }
+
+    function renderTable(devices, versions) {
+        const tbody = document.getElementById('inventoryTableBody');
+        tbody.innerHTML = '';
+
+        const selectedGroup = document.getElementById('filterGroupSelect').value;
+
+        devices.forEach(d => {
+            const group = d.Group || 'Generale';
+            if (selectedGroup !== 'ALL' && group !== selectedGroup) return;
+
+            const scan = versions[d.IP] || { version: "Non Rilevata", status: "unknown" };
+            const ledClass = scan.status === "online" ? "led-online" : "led-offline";
+            
+            // Creazione dinamica nome del file di backup atteso per l'esportazione
+            const downloadFilename = `${group}_${d.IP}.txt`; 
 
             tbody.innerHTML += `<tr>
                 <td><span class="led ${ledClass}"></span>${scan.status.toUpperCase()}</td>
+                <td><span class="badge">${group}</span></td>
                 <td><strong>${d.IP}</strong></td>
                 <td>${d.Vendor.toUpperCase()}</td>
                 <td><code>${scan.version}</code></td>
+                <td class="actions-cell">
+                    <button class="btn btn-secondary" style="padding:4px 8px; margin:0;" onclick="editDevice('${d.IP}')">Modifica</button>
+                    <button class="btn btn-danger" style="padding:4px 8px; margin:0;" onclick="deleteDevice('${d.IP}')">Elimina</button>
+                    <button class="btn" style="padding:4px 8px; margin:0; width:auto; background:#5ecf8d;" onclick="downloadBackup('${d.IP}')">📥 Backup</button>
+                </td>
             </tr>`;
+        });
+    }
 
-            select.innerHTML += `<option value="${d.IP}">${d.IP} (${d.Vendor})</option>`;
+    function filterInventory() {
+        fetch('/api/local-devices').then(res => res.json()).then(data => {
+            renderTable(globalDevices, data.detected_versions);
         });
     }
 
@@ -148,37 +190,71 @@
             ip: document.getElementById('devIp').value,
             vendor: document.getElementById('devVendor').value,
             profile: document.getElementById('devProfile').value,
-            username: document.getElementById('devUser').value || "Admin",
-            password: document.getElementById('devPass').value || "admin",
-            enable_secret: document.getElementById('devSecret').value || "admin"
+            username: document.getElementById('devUser').value,
+            password: document.getElementById('devPass').value,
+            enable_secret: document.getElementById('devSecret').value,
+            group: document.getElementById('devGroup').value
         };
         await fetch('/api/add-device', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
         });
-        alert("Dispositivo aggiunto!");
+        alert("Dispositivo salvato con successo!");
         loadInventory();
     });
 
-    document.getElementById('btnRunTriage').addEventListener('click', async () => {
-        const out = document.getElementById('consoleOutput');
-        out.innerHTML += "\n> Lancio del Worker di automazione e backup su tutti i driver dei Vendor attivi...";
-        await fetch('/api/run-triage', { method: 'POST' });
-        out.innerHTML += "\n> Scansione e allineamento completato!";
-        loadInventory();
-    });
+    function editDevice(ip) {
+        const d = globalDevices.find(item => item.IP === ip);
+        if (d) {
+            document.getElementById('devIp').value = d.IP;
+            document.getElementById('devVendor').value = d.Vendor;
+            document.getElementById('devProfile').value = d.Profile;
+            document.getElementById('devGroup').value = d.Group || 'Generale';
+            if (d.Profile === 'custom') {
+                document.getElementById('customCredsForm').style.display = 'block';
+                document.getElementById('devUser').value = d.Username;
+                document.getElementById('devPass').value = d.Password;
+                document.getElementById('devSecret').value = d.Enable Secret;
+            }
+        }
+    }
 
-    document.getElementById('btnSendCli').addEventListener('click', async () => {
-        const ip = document.getElementById('cliTargetSelect').value;
-        const cmd = document.getElementById('cliCommand').value;
-        const out = document.getElementById('consoleOutput');
+    async function deleteDevice(ip) {
+        if (confirm(`Sicuro di voler rimuovere l'apparato ${ip}?`)) {
+            await fetch('/api/delete-device', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ip: ip })
+            });
+            loadInventory();
+        }
+    }
+
+    function downloadBackup(ip) {
+        // Cerca il nome file associato basandosi sul comportamento del core engine
+        const d = globalDevices.find(item => item.IP === ip);
+        const filename = `${d.Vendor}_${ip}.txt`; // Sostituisci o mappa in base alla configurazione salvata reale
+        window.location.href = `/api/download-backup/${filename}`;
+    }
+
+    // Gestione Upload del File CSV
+    document.getElementById('btnUploadCsv').addEventListener('click', () => {
+        const fileInput = document.getElementById('csvFileInput');
+        if (fileInput.files.length === 0) { alert("Seleziona un file CSV da caricare"); return; }
         
-        out.innerHTML += `\n> Esecuzione di [${cmd}] tramite il driver di ${ip}...`;
-        const res = await fetch('/api/send-command', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ip: ip, command: cmd })
-        });
-        const data = await res.json();
-        out.innerHTML += `\n${data.output || data.message}`;
-        out.scrollTop = out.scrollHeight;
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const text = e.target.result;
+            const res = await fetch('/api/import-csv', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ csv_data: text })
+            });
+            if(res.ok) {
+                alert("Importazione massiva completata!");
+                loadInventory();
+                switchTab('tab-inventory');
+            }
+        };
+        reader.readAsText(file);
     });
 
     window.onload = loadInventory;
