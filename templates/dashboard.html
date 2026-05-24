@@ -1,151 +1,939 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="it" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <title>Net Manager Alfa Enterprise v2</title>
-  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,600,900&f[]=jetbrains-mono@400&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Net Manager Alfa Enterprise v3</title>
+  
+  <!-- Satoshi & JetBrains Mono Fonts -->
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,600,700,900&f[]=jetbrains-mono@400,700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <!-- Vis.js Standalone for beautiful Interactive Topologies -->
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
   <style>
     :root {
-      --bg: #0b1015; --surface: #111821; --surface-2: #16202c; --border: rgba(177,196,214,0.14);
-      --text: #edf3fa; --text-muted: #a8b3c2; --primary: #2cbcc3; --danger: #ff6b7c; --radius: 8px;
+      --bg: #070a0e;
+      --surface: #0f141c;
+      --surface-2: #161e2a;
+      --surface-3: #1d2837;
+      --border: rgba(147, 172, 206, 0.12);
+      --text: #f0f4f9;
+      --text-muted: #8d9bb0;
+      --primary: #2cbcc3;
+      --primary-glow: rgba(44, 188, 195, 0.35);
+      --success: #3be188;
+      --success-glow: rgba(59, 225, 136, 0.35);
+      --danger: #ff6b7c;
+      --danger-glow: rgba(255, 107, 124, 0.35);
+      --warning: #ffb84d;
+      --discovered: #a3a3a3;
+      --radius: 12px;
+      --font-main: 'Satoshi', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-code: 'JetBrains Mono', monospace;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    body { font-family: 'Satoshi', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
-    aside, main { background: var(--surface); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
-    
-    .tab-nav { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-    .tab-button { background: none; border: none; color: var(--text-muted); padding: 8px 16px; cursor: pointer; font-weight: bold; font-size: 15px; }
-    .tab-button.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
 
-    .led { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
-    .led-online { background: #5ecf8d; box-shadow: 0 0 8px #5ecf8d; }
-    .led-offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
-    
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
-    .form-group input, .form-group select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-2); color: inherit; }
-    
-    .btn { width: 100%; padding: 10px; background: var(--primary); border: none; color: #000; font-weight: bold; border-radius: 6px; cursor: pointer; margin-bottom: 8px; }
-    .btn-danger { background: var(--danger); color: #fff; }
-    .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
-    
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
-    .actions-cell { display: flex; gap: 8px; }
-    .badge { background: var(--surface-2); padding: 2px 6px; border-radius: 4px; font-size: 12px; border: 1px solid var(--border); }
-    .template-box { background: #000; color: #f0f0f0; font-family: monospace; padding: 10px; border-radius: 6px; font-size: 12px; margin-bottom: 10px; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+    /* Login Page Glassmorphism */
+    #login-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(7, 10, 14, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: var(--transition);
+    }
+
+    .login-card {
+      background: rgba(15, 20, 28, 0.65);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      width: 420px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      animation: fadeInUp 0.4s ease;
+    }
+
+    .login-card h2 {
+      font-size: 26px;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-weight: 900;
+    }
+
+    .login-card p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 25px;
+    }
+
+    /* Base Layout */
+    aside, main {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    aside {
+      gap: 20px;
+      position: sticky;
+      top: 20px;
+      height: calc(100vh - 40px);
+      overflow-y: auto;
+    }
+
+    h2, h3 {
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .aside-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Forms elements */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px 12px 10px 36px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      transition: var(--transition);
+    }
+
+    .form-group select {
+      cursor: pointer;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .group-input-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: var(--transition);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #05080c;
+    }
+
+    .btn-primary:hover {
+      background: #39cfd7;
+      box-shadow: 0 0 15px var(--primary-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--surface-2);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-3);
+      border-color: var(--text-muted);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      background: #ff8593;
+      box-shadow: 0 0 15px var(--danger-glow);
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 6px;
+      width: auto;
+    }
+
+    /* Tabs Navigation */
+    .tab-nav {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tab-button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 15px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .tab-button:hover {
+      color: var(--text);
+      background: var(--surface-2);
+    }
+
+    .tab-button.active {
+      color: var(--primary);
+      background: var(--surface-2);
+      box-shadow: inset 0 -2px 0 var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+      flex-grow: 1;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Status led */
+    .led-container {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .led {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .led-online {
+      background: var(--success);
+      box-shadow: 0 0 10px var(--success);
+    }
+
+    .led-offline {
+      background: var(--danger);
+      box-shadow: 0 0 10px var(--danger);
+    }
+
+    .led-auth_failed {
+      background: var(--warning);
+      box-shadow: 0 0 10px var(--warning);
+    }
+
+    .led-discovered {
+      background: var(--discovered);
+      box-shadow: 0 0 10px var(--discovered);
+    }
+
+    /* Table Styles */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface-2);
+      text-align: left;
+    }
+
+    th, td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    th {
+      font-weight: 700;
+      color: var(--text-muted);
+      background: var(--surface-3);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .badge {
+      background: var(--surface-3);
+      color: var(--primary);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* Network Map Container */
+    #networkGraphContainer {
+      width: 100%;
+      height: 550px;
+      background: #090d13;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .network-legend {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      background: rgba(15, 20, 28, 0.85);
+      border: 1px solid var(--border);
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    /* Vulnerability check panel */
+    .vuln-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 15px;
+    }
+
+    .vuln-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .severity-pill {
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .severity-CRITICAL { background: #3c0000; color: #ff5252; border: 1px solid #ff5252; }
+    .severity-HIGH { background: #3d1c00; color: #ffa726; border: 1px solid #ffa726; }
+    .severity-MEDIUM { background: #3b3a00; color: #ffee58; border: 1px solid #ffee58; }
+    .severity-LOW { background: #003604; color: #66bb6a; border: 1px solid #66bb6a; }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(7, 10, 14, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 900;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      width: 480px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+      animation: zoomIn 0.3s ease;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .modal-close {
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 18px;
+      transition: var(--transition);
+    }
+
+    .modal-close:hover {
+      color: var(--text);
+    }
+
+    /* Background Jobs Monitor Bar */
+    .progress-overlay {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      background: var(--surface-2);
+      border: 2px solid var(--primary);
+      box-shadow: 0 10px 30px var(--primary-glow);
+      padding: 20px;
+      border-radius: 12px;
+      width: 380px;
+      z-index: 800;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: var(--surface-3);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+      transition: width 0.3s ease;
+    }
+
+    /* Templates / Code Area */
+    .template-box {
+      background: #05080c;
+      border: 1px solid var(--border);
+      color: #61afef;
+      font-family: var(--font-code);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 15px;
+      overflow-x: auto;
+    }
+
+    /* Keyframes Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes zoomIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
   </style>
 </head>
 <body>
 
+  <!-- Overlay Login Glassmorphic -->
+  <div id="login-overlay">
+    <div class="login-card">
+      <div style="font-size: 40px; color: var(--primary); margin-bottom: 15px;">
+        <i class="fa-solid fa-shield-halved fa-bounce"></i>
+      </div>
+      <h2>Net Manager Alfa</h2>
+      <p>Enterprise Console v3.0</p>
+      
+      <div class="form-group" style="text-align: left;">
+        <label>Username</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-user"></i>
+          <input id="loginUser" type="text" placeholder="admin" value="admin">
+        </div>
+      </div>
+      
+      <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+        <label>Password</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-lock"></i>
+          <input id="loginPass" type="password" placeholder="••••••••" value="admin">
+        </div>
+      </div>
+      
+      <button class="btn btn-primary" id="btnLogin">
+        <i class="fa-solid fa-right-to-bracket"></i> Accedi
+      </button>
+      
+      <div id="loginError" style="color: var(--danger); font-size: 13px; margin-top: 15px; display: none;">
+        Credenziali non corrette. Riprova.
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar di Provisioning & Gruppi -->
   <aside>
-    <h2>Provisioning Engine</h2>
-    
-    <div class="form-group">
-      <label>Cartella / Cliente / Sede</label>
-      <input id="devGroup" type="text" placeholder="Es. Cliente_Alfa, Sede_Milano">
-    </div>
-    <div class="form-group">
-      <label>IP Apparato</label>
-      <input id="devIp" type="text" placeholder="10.0.0.1">
-    </div>
-    <div class="form-group">
-      <label>Vendor Engine</label>
-      <select id="devVendor">
-        <option value="cisco">Cisco IOS Driver</option>
-        <option value="hpe">HPE ProCurve Driver</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Profilo Credenziali</label>
-      <select id="devProfile">
-        <option value="default">Profilo Rete Standard</option>
-        <option value="custom">Credenziali dedicate...</option>
-      </select>
-    </div>
-    <div id="customCredsForm" style="display:none;">
-      <div class="form-group"><label>Username</label><input id="devUser" type="text" value="Admin"></div>
-      <div class="form-group"><label>Password</label><input id="devPass" type="password" value="admin"></div>
-      <div class="form-group"><label>Enable Secret</label><input id="devSecret" type="password" value="admin"></div>
+    <div class="aside-header">
+      <h2><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> Net Manager Alfa</h2>
+      <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Enterprise Controller</span>
     </div>
     
-    <button class="btn" id="btnSaveDevice">Salva / Aggiorna</button>
-    <button class="btn" id="btnRunTriage" style="background:#efad4d; margin-top: 10px;">Avvia Backup & Triage</button>
+    <div class="user-badge">
+      <span><i class="fa-solid fa-user-shield"></i> Amministratore</span>
+      <a href="#" onclick="logout()" style="color: var(--danger); text-decoration: none; font-weight: 700;"><i class="fa-solid fa-power-off"></i> Esci</a>
+    </div>
+
+    <div>
+      <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fa-solid fa-circle-plus"></i> Nodo / Provisioning</h3>
+      
+      <div class="form-group">
+        <label>Sede o Cliente (Gruppo)</label>
+        <div class="group-input-row">
+          <select id="devGroup"></select>
+          <button class="btn btn-secondary btn-small" onclick="openGroupModal()" style="padding:10px;"><i class="fa-solid fa-folder-gear"></i></button>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>IP Apparato</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-server"></i>
+          <input id="devIp" type="text" placeholder="10.0.0.1">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Driver Vendor</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-gears"></i>
+          <select id="devVendor" style="padding-left:36px;">
+            <option value="cisco">Cisco IOS Driver</option>
+            <option value="hpe">HPE ProCurve Driver</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Profilo Credenziali</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-key"></i>
+          <select id="devProfile" style="padding-left:36px;">
+            <option value="default">Profilo Rete Standard</option>
+            <option value="custom">Credenziali dedicate...</option>
+          </select>
+        </div>
+      </div>
+      
+      <div id="customCredsForm" style="display:none; border-left: 2px solid var(--primary); padding-left: 10px; margin-bottom: 10px;">
+        <div class="form-group">
+          <label>Username</label>
+          <input id="devUser" type="text" value="Admin" style="padding-left:12px;">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input id="devPass" type="password" value="admin" style="padding-left:12px;">
+        </div>
+        <div class="form-group">
+          <label>Enable Secret</label>
+          <input id="devSecret" type="password" value="admin" style="padding-left:12px;">
+        </div>
+      </div>
+      
+      <button class="btn btn-primary" id="btnSaveDevice" style="margin-top: 10px;">
+        <i class="fa-solid fa-floppy-disk"></i> Salva / Aggiorna
+      </button>
+    </div>
     
-    <div style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 15px;">
-      <h3>Filtra per Sede/Cliente</h3>
-      <select id="filterGroupSelect" onchange="filterInventory()"><option value="ALL">-- Mostra Tutti --</option></select>
+    <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: auto;">
+      <h3 style="font-size: 14px; margin-bottom: 10px;"><i class="fa-solid fa-filter"></i> Filtra Vista</h3>
+      <div class="form-group">
+        <select id="filterGroupSelect" onchange="filterInventory()" style="padding-left:12px;"></select>
+      </div>
     </div>
   </aside>
 
+  <!-- Area Centrale Principale -->
   <main>
     <div class="tab-nav">
-      <button class="tab-button active" onclick="switchTab('tab-inventory')">Network Inventory</button>
-      <button class="tab-button" onclick="switchTab('tab-import')">Importazione CSV Massiva</button>
-      <button class="tab-button" onclick="switchTab('tab-security')">Threat Intel (EUVD)</button>
+      <button class="tab-button active" onclick="switchTab('tab-inventory')">
+        <i class="fa-solid fa-list-check"></i> Network Inventory
+      </button>
+      <button class="tab-button" onclick="switchTab('tab-network-map')">
+        <i class="fa-solid fa-circle-nodes"></i> Mappa di Rete
+      </button>
+      <button class="tab-button" onclick="switchTab('tab-security')">
+        <i class="fa-solid fa-shield-virus"></i> Threat Intel (EUVD)
+      </button>
+      <button class="tab-button" onclick="switchTab('tab-import')">
+        <i class="fa-solid fa-file-csv"></i> Importazione CSV
+      </button>
     </div>
 
+    <!-- TAB 1: Network Inventory -->
     <div id="tab-inventory" class="tab-content active">
-      <h3>Mappa Logica e Gestione Nodi</h3>
-      <table>
-        <thead>
-          <tr><th>Stato</th><th>Gruppo/Sede</th><th>Indirizzo IP</th><th>Vendor</th><th>Firmware</th><th>Azioni / Esportazione</th></tr>
-        </thead>
-        <tbody id="inventoryTableBody"></tbody>
-      </table>
-    </div>
-
-    <div id="tab-import" class="tab-content">
-      <h3>Caricamento file CSV di Inventario</h3>
-      <p>Il file CSV deve contenere tassativamente l'intestazione corretta. Ecco la struttura richiesta:</p>
-      <div class="template-box">IP,Vendor,Profile,Username,Password,Enable Secret,Group<br>192.168.1.1,cisco,default,Admin,pass,secret,Cliente_A<br>192.168.2.1,hpe,custom,Manager,pwd,secret,Sede_Roma</div>
-      
-      <div class="form-group" style="margin-top: 20px;">
-        <label>Seleziona File CSV</label>
-        <input type="file" id="csvFileInput" accept=".csv" />
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+        <h3>Gestione Dispositivi</h3>
+        <button class="btn btn-primary btn-small" id="btnRunTriage" style="background: var(--warning); color: #000;">
+          <i class="fa-solid fa-bolt-lightning"></i> Avvia Triage Globale
+        </button>
       </div>
-      <button class="btn" id="btnUploadCsv">Elabora e Importa CSV</button>
+      
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Stato</th>
+              <th>Gruppo/Sede</th>
+              <th>Indirizzo IP</th>
+              <th>Vendor</th>
+              <th>Firmware</th>
+              <th>Azioni / Esportazione</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryTableBody"></tbody>
+        </table>
+      </div>
     </div>
 
+    <!-- TAB 2: Mappa di Rete Interattiva -->
+    <div id="tab-network-map" class="tab-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+        <h3>Topologia di Rete (CDP / LLDP)</h3>
+        <button class="btn btn-secondary btn-small" onclick="loadNetworkMap()">
+          <i class="fa-solid fa-arrows-rotate"></i> Aggiorna Mappa
+        </button>
+      </div>
+      
+      <div style="position: relative; flex-grow: 1;">
+        <div id="networkGraphContainer"></div>
+        <div class="network-legend">
+          <div class="legend-item"><span class="led led-online"></span>Dispositivo Online (Inventario)</div>
+          <div class="legend-item"><span class="led led-offline"></span>Dispositivo Offline (Inventario)</div>
+          <div class="legend-item"><span class="led led-auth_failed"></span>Autenticazione Fallita</div>
+          <div class="legend-item"><span class="led led-discovered"></span>Vicino Discoperto (CDP/LLDP)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Threat Intel (EUVD) -->
     <div id="tab-security" class="tab-content">
-      <h3>Vulnerability Matcher (EUVD)</h3>
-      <div id="securityTriageContainer">Esegui una scansione di rete per popolare la telemetria.</div>
+      <div style="margin-bottom: 20px;">
+        <h3>Vulnerability Matcher (EUVD ENISA)</h3>
+        <p style="font-size: 14px; color: var(--text-muted); margin-top: 5px;">
+          Controlla in tempo reale le vulnerabilità del firmware rilevate sugli apparati attivi confrontandole con l'European Vulnerability Database (EUVD).
+        </p>
+      </div>
+      
+      <div id="securityTriageContainer" style="display: flex; flex-direction: column; gap: 15px;">
+        <!-- Popolato in dinamico con i match delle vulnerabilità -->
+      </div>
+    </div>
+
+    <!-- TAB 4: Importazione CSV -->
+    <div id="tab-import" class="tab-content">
+      <h3>Importazione Massiva da CSV</h3>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">
+        Il file CSV deve contenere tassativamente l'intestazione specificata di seguito.
+      </p>
+      <div class="template-box">IP,Vendor,Profile,Username,Password,Enable Secret,Group
+192.168.1.1,cisco,default,Admin,pass,secret,Sede_Milano
+192.168.2.1,hpe,custom,Manager,pwd,secret,Sede_Roma</div>
+      
+      <div class="form-group" style="margin-top: 20px; margin-bottom: 20px;">
+        <label>Seleziona file CSV</label>
+        <input type="file" id="csvFileInput" accept=".csv" style="padding-left: 12px; cursor: pointer;">
+      </div>
+      <button class="btn btn-primary" id="btnUploadCsv">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Elabora e Importa
+      </button>
     </div>
   </main>
 
+  <!-- Modal Gestione Gruppi/Sedi -->
+  <div class="modal-overlay" id="groupModalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-folder-gear" style="color: var(--primary);"></i> Gestione Gruppi / Sedi</h3>
+        <i class="fa-solid fa-xmark modal-close" onclick="closeGroupModal()"></i>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <div class="form-group">
+          <label>Nuovo Gruppo</label>
+          <div class="group-input-row">
+            <input id="newGroupNameInput" type="text" placeholder="Es. Cliente_Beta" style="padding-left:12px;">
+            <button class="btn btn-primary btn-small" onclick="createGroup()"><i class="fa-solid fa-plus"></i></button>
+          </div>
+        </div>
+      </div>
+      
+      <h4 style="margin-bottom: 10px; font-size: 13px; text-transform: uppercase; color: var(--text-muted);">Gruppi Esistenti</h4>
+      <div id="modalGroupsList" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); padding: 8px; border-radius: 8px; background: var(--surface-2);">
+        <!-- Lista dei gruppi in dinamico -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Box dei Job in Background -->
+  <div class="progress-overlay" id="triageProgressBox">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h4 style="color: var(--primary); font-size: 15px;"><i class="fa-solid fa-circle-notch fa-spin"></i> Triage in Corso...</h4>
+      <span id="triageProgressPct" style="font-weight: 700;">0%</span>
+    </div>
+    <div style="font-size: 12px; color: var(--text-muted);" id="triageProgressMsg">Avvio scansione...</div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="triageProgressBarFill"></div>
+    </div>
+  </div>
+
+  <!-- Terminal CLI Modale Rapido -->
+  <div class="modal-overlay" id="cliModalOverlay">
+    <div class="modal" style="width: 700px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-terminal" style="color: var(--primary);"></i> Console CLI Interattiva</h3>
+        <i class="fa-solid fa-xmark modal-close" onclick="closeCliModal()"></i>
+      </div>
+      <div style="margin-bottom: 10px; font-size: 14px;">
+        Dispositivo target: <strong id="cliTargetIp">10.0.0.1</strong>
+      </div>
+      
+      <div id="cliOutputConsole" style="background:#05080c; color:#a6acb9; font-family:var(--font-code); font-size:12px; padding:15px; border-radius:8px; height: 300px; overflow-y: auto; border: 1px solid var(--border); margin-bottom: 15px; white-space: pre-wrap;">
+Consiglio: invia un comando come "show version", "show run" o "show ip interface brief"...
+      </div>
+      
+      <div class="form-group">
+        <label>Comando CLI</label>
+        <div class="group-input-row">
+          <input id="cliCommandInput" type="text" placeholder="Inserisci il comando..." style="padding-left:12px;" onkeydown="if(event.key === 'Enter') sendCommand()">
+          <button class="btn btn-primary btn-small" onclick="sendCommand()"><i class="fa-solid fa-paper-plane"></i> Invia</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     let globalDevices = [];
+    let globalGroups = [];
+    let isTriagePolling = false;
 
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        event.target.classList.add('active');
+    // --- AUTENTICAZIONE E UTILITY ---
+
+    function getAuthHeaders() {
+        const token = localStorage.getItem("net_token");
+        return token ? { "Authorization": `Bearer ${token}` } : {};
     }
 
-    document.getElementById('devProfile').addEventListener('change', (e) => {
-        document.getElementById('customCredsForm').style.display = e.target.value === 'custom' ? 'block' : 'none';
+    function checkAuth() {
+        const token = localStorage.getItem("net_token");
+        if (!token) {
+            document.getElementById("login-overlay").style.display = "flex";
+            return false;
+        }
+        document.getElementById("login-overlay").style.display = "none";
+        return true;
+    }
+
+    document.getElementById("btnLogin").addEventListener("click", async () => {
+        const payload = {
+            username: document.getElementById("loginUser").value,
+            password: document.getElementById("loginPass").value
+        };
+        try {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem("net_token", data.access_token);
+                document.getElementById("loginError").style.display = "none";
+                document.getElementById("login-overlay").style.display = "none";
+                initializeApp();
+            } else {
+                document.getElementById("loginError").style.display = "block";
+            }
+        } catch {
+            document.getElementById("loginError").style.display = "block";
+        }
     });
 
+    function logout() {
+        localStorage.removeItem("net_token");
+        document.getElementById("login-overlay").style.display = "flex";
+    }
+
+    // --- INIZIALIZZAZIONE E CARICAMENTO DATI ---
+
+    async function initializeApp() {
+        if (!checkAuth()) return;
+        await loadGroups();
+        await loadInventory();
+        startTriageStatusPolling();
+    }
+
+    async function loadGroups() {
+        const res = await fetch("/api/groups", { headers: getAuthHeaders() });
+        if (res.status === 401) { logout(); return; }
+        
+        globalGroups = await res.json();
+        
+        // Popola select del form
+        const devGroupSelect = document.getElementById("devGroup");
+        devGroupSelect.innerHTML = "";
+        globalGroups.forEach(g => {
+            devGroupSelect.innerHTML += `<option value="${g}">${g}</option>`;
+        });
+
+        // Popola select del filtro
+        const filterGroupSelect = document.getElementById("filterGroupSelect");
+        const prevFilterVal = filterGroupSelect.value;
+        filterGroupSelect.innerHTML = `<option value="ALL">-- Mostra Tutti --</option>`;
+        globalGroups.forEach(g => {
+            filterGroupSelect.innerHTML += `<option value="${g}">${g}</option>`;
+        });
+        filterGroupSelect.value = prevFilterVal || "ALL";
+    }
+
     async function loadInventory() {
-        const res = await fetch('/api/local-devices');
+        const res = await fetch("/api/local-devices", { headers: getAuthHeaders() });
+        if (res.status === 401) { logout(); return; }
+        
         const data = await res.json();
         globalDevices = data.devices;
-        
-        // Popola i filtri dei gruppi
-        const groupSelect = document.getElementById('filterGroupSelect');
-        const currentGroupFilter = groupSelect.value;
-        const groups = new Set(['ALL']);
-        globalDevices.forEach(d => groups.add(d.Group || 'Generale'));
-        
-        groupSelect.innerHTML = '';
-        groups.forEach(g => {
-            groupSelect.innerHTML += `<option value="${g}">${g === 'ALL' ? '-- Mostra Tutti --' : g}</option>`;
-        });
-        groupSelect.value = currentGroupFilter || 'ALL';
-
         renderTable(globalDevices, data.detected_versions);
+        
+        // Se la tab attiva è Threat Intel, aggiornala
+        if (document.getElementById("tab-security").classList.contains("active")) {
+            loadThreatIntel(data.detected_versions);
+        }
     }
 
     function renderTable(devices, versions) {
@@ -159,31 +947,40 @@
             if (selectedGroup !== 'ALL' && group !== selectedGroup) return;
 
             const scan = versions[d.IP] || { version: "Non Rilevata", status: "unknown" };
-            const ledClass = scan.status === "online" ? "led-online" : "led-offline";
-            
-            // Creazione dinamica nome del file di backup atteso per l'esportazione
-            const downloadFilename = `${group}_${d.IP}.txt`; 
+            let ledClass = "led-offline";
+            if (scan.status === "online") ledClass = "led-online";
+            else if (scan.status === "auth_failed") ledClass = "led-auth_failed";
 
             tbody.innerHTML += `<tr>
-                <td><span class="led ${ledClass}"></span>${scan.status.toUpperCase()}</td>
+                <td>
+                  <span class="led-container">
+                    <span class="led ${ledClass}"></span>
+                    ${scan.status.toUpperCase()}
+                  </span>
+                </td>
                 <td><span class="badge">${group}</span></td>
                 <td><strong>${d.IP}</strong></td>
                 <td>${d.Vendor.toUpperCase()}</td>
                 <td><code>${scan.version}</code></td>
                 <td class="actions-cell">
-                    <button class="btn btn-secondary" style="padding:4px 8px; margin:0;" onclick="editDevice('${d.IP}')">Modifica</button>
-                    <button class="btn btn-danger" style="padding:4px 8px; margin:0;" onclick="deleteDevice('${d.IP}')">Elimina</button>
-                    <button class="btn" style="padding:4px 8px; margin:0; width:auto; background:#5ecf8d;" onclick="downloadBackup('${d.IP}')">📥 Backup</button>
+                    <button class="btn btn-secondary btn-small" style="margin:0;" onclick="editDevice('${d.IP}')"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button class="btn btn-secondary btn-small" style="margin:0;" onclick="openCliModal('${d.IP}')"><i class="fa-solid fa-terminal"></i></button>
+                    <button class="btn btn-primary btn-small" style="margin:0; width:auto; background:#3be188; color:#000;" onclick="downloadBackup('${d.IP}')"><i class="fa-solid fa-download"></i></button>
+                    <button class="btn btn-danger btn-small" style="margin:0;" onclick="deleteDevice('${d.IP}')"><i class="fa-solid fa-trash-can"></i></button>
                 </td>
             </tr>`;
         });
     }
 
     function filterInventory() {
-        fetch('/api/local-devices').then(res => res.json()).then(data => {
-            renderTable(globalDevices, data.detected_versions);
-        });
+        loadInventory();
     }
+
+    // --- FORM DEVICE CRUD ---
+
+    document.getElementById('devProfile').addEventListener('change', (e) => {
+        document.getElementById('customCredsForm').style.display = e.target.value === 'custom' ? 'block' : 'none';
+    });
 
     document.getElementById('btnSaveDevice').addEventListener('click', async () => {
         const payload = {
@@ -195,11 +992,27 @@
             enable_secret: document.getElementById('devSecret').value,
             group: document.getElementById('devGroup').value
         };
-        await fetch('/api/add-device', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        
+        if (!payload.ip) { alert("Inserisci l'IP dell'apparato."); return; }
+
+        const res = await fetch('/api/add-device', {
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, 
+            body: JSON.stringify(payload)
         });
-        alert("Dispositivo salvato con successo!");
-        loadInventory();
+        if (res.ok) {
+            alert("Dispositivo salvato con successo!");
+            // Svuota i campi
+            document.getElementById('devIp').value = "";
+            document.getElementById('devProfile').value = "default";
+            document.getElementById('customCredsForm').style.display = "none";
+            
+            await loadGroups();
+            loadInventory();
+        } else {
+            const err = await res.json();
+            alert(`Errore: ${err.detail || "Impossibile salvare il dispositivo"}`);
+        }
     });
 
     function editDevice(ip) {
@@ -214,50 +1027,438 @@
                 document.getElementById('devUser').value = d.Username;
                 document.getElementById('devPass').value = d.Password;
                 document.getElementById('devSecret').value = d['Enable Secret'];
+            } else {
+                document.getElementById('customCredsForm').style.display = 'none';
             }
         }
     }
 
     async function deleteDevice(ip) {
         if (confirm(`Sicuro di voler rimuovere l'apparato ${ip}?`)) {
-            await fetch('/api/delete-device', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ip: ip })
+            const res = await fetch('/api/delete-device', {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, 
+                body: JSON.stringify({ ip: ip })
             });
-            loadInventory();
+            if (res.ok) {
+                loadInventory();
+            }
         }
     }
 
     function downloadBackup(ip) {
-        // Cerca il nome file associato basandosi sul comportamento del core engine
-        const d = globalDevices.find(item => item.IP === ip);
-        const filename = `${d.Vendor}_${ip}.txt`; // Sostituisci o mappa in base alla configurazione salvata reale
-        window.location.href = `/api/download-backup/${filename}`;
+        // Avvia il download del backup. L'endpoint risolve in modo intelligente il file
+        window.location.href = `/api/download-backup/${ip}?access_token=${localStorage.getItem("net_token")}`;
     }
 
-    // Gestione Upload del File CSV
-    document.getElementById('btnUploadCsv').addEventListener('click', () => {
+    // --- GRUPPI MODAL CRUD ---
+
+    function openGroupModal() {
+        document.getElementById("groupModalOverlay").style.display = "flex";
+        renderModalGroupsList();
+    }
+
+    function closeGroupModal() {
+        document.getElementById("groupModalOverlay").style.display = "none";
+    }
+
+    function renderModalGroupsList() {
+        const container = document.getElementById("modalGroupsList");
+        container.innerHTML = "";
+        globalGroups.forEach(g => {
+            const isGeneral = g === "Generale";
+            container.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; padding: 6px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <span><strong>${g}</strong></span>
+                ${isGeneral ? `<span style="font-size:10px; color:var(--text-muted);">Default</span>` : `
+                <div style="display:flex; gap: 4px;">
+                    <button class="btn btn-secondary btn-small" style="padding:4px 8px;" onclick="renameGroupPrompt('${g}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn btn-danger btn-small" style="padding:4px 8px;" onclick="deleteGroup('${g}')"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+                `}
+            </div>`;
+        });
+    }
+
+    async function createGroup() {
+        const input = document.getElementById("newGroupNameInput");
+        const groupName = input.value.trim();
+        if (!groupName) return;
+
+        const res = await fetch("/api/groups", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+            body: JSON.stringify({ group_name: groupName })
+        });
+        if (res.ok) {
+            input.value = "";
+            await loadGroups();
+            renderModalGroupsList();
+        } else {
+            alert("Errore durante la creazione del gruppo.");
+        }
+    }
+
+    async function renameGroupPrompt(oldName) {
+        const newName = prompt(`Nuovo nome per il gruppo "${oldName}":`, oldName);
+        if (!newName || newName.trim() === oldName) return;
+
+        const res = await fetch(`/api/groups/${oldName}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+            body: JSON.stringify({ new_name: newName.trim() })
+        });
+        if (res.ok) {
+            await loadGroups();
+            renderModalGroupsList();
+            loadInventory();
+        }
+    }
+
+    async function deleteGroup(name) {
+        if (confirm(`Sicuro di voler eliminare il gruppo "${name}"? Tutti i dispositivi al suo interno verranno riassegnati a "Generale".`)) {
+            const res = await fetch(`/api/groups/${name}`, {
+                method: "DELETE",
+                headers: getAuthHeaders()
+            });
+            if (res.ok) {
+                await loadGroups();
+                renderModalGroupsList();
+                loadInventory();
+            }
+        }
+    }
+
+    // --- TERMINAL CLI INTERACTIVE ---
+
+    let currentCliIp = "";
+
+    function openCliModal(ip) {
+        currentCliIp = ip;
+        document.getElementById("cliTargetIp").innerText = ip;
+        document.getElementById("cliOutputConsole").innerText = `Console aperta per ${ip}.\nConsiglio: invia un comando CLI...`;
+        document.getElementById("cliModalOverlay").style.display = "flex";
+    }
+
+    function closeCliModal() {
+        document.getElementById("cliModalOverlay").style.display = "none";
+    }
+
+    async function sendCommand() {
+        const input = document.getElementById("cliCommandInput");
+        const cmd = input.value.trim();
+        if (!cmd) return;
+
+        const consoleBox = document.getElementById("cliOutputConsole");
+        consoleBox.innerText += `\n\n> Inviando: ${cmd}\n`;
+        input.value = "";
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+
+        try {
+            const res = await fetch("/api/send-command", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+                body: JSON.stringify({ ip: currentCliIp, command: cmd })
+            });
+            const data = await res.json();
+            if (data.status === "success") {
+                consoleBox.innerText += `\n${data.output}`;
+            } else {
+                consoleBox.innerText += `\nErrore: ${data.message}`;
+            }
+        } catch (e) {
+            consoleBox.innerText += `\nErrore di comunicazione: ${e}`;
+        }
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+
+    // --- BACKGROUND JOBS (TRIAGE STATUS POLLING) ---
+
+    document.getElementById("btnRunTriage").addEventListener("click", async () => {
+        const res = await fetch("/api/run-triage", { method: "POST", headers: getAuthHeaders() });
+        if (res.ok) {
+            startTriageStatusPolling();
+        }
+    });
+
+    function startTriageStatusPolling() {
+        if (isTriagePolling) return;
+        isTriagePolling = true;
+        pollTriageStatus();
+    }
+
+    async function pollTriageStatus() {
+        try {
+            const res = await fetch("/api/triage-status", { headers: getAuthHeaders() });
+            if (!res.ok) { isTriagePolling = false; return; }
+            const statusData = await res.json();
+            
+            const pbox = document.getElementById("triageProgressBox");
+            if (statusData.status === "running") {
+                pbox.style.display = "flex";
+                const total = statusData.total || 1;
+                const progress = statusData.progress || 0;
+                const pct = Math.round((progress / total) * 100);
+                
+                document.getElementById("triageProgressPct").innerText = `${pct}%`;
+                document.getElementById("triageProgressMsg").innerText = `Elaborazione: ${statusData.current_device} (${progress}/${total})`;
+                document.getElementById("triageProgressBarFill").style.width = `${pct}%`;
+                
+                setTimeout(pollTriageStatus, 1500);
+            } else {
+                pbox.style.display = "none";
+                isTriagePolling = false;
+                loadInventory();
+            }
+        } catch {
+            isTriagePolling = false;
+        }
+    }
+
+    // --- TAB 2: INTERACTIVE NETWORK MAP (VIS.JS) ---
+
+    let networkInstance = null;
+
+    async function loadNetworkMap() {
+        const res = await fetch("/api/network-map", { headers: getAuthHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // Trasforma nodi per Vis.js
+        const nodes = data.nodes.map(n => {
+            let colorBg = "#1d2837";
+            let colorBorder = "#8d9bb0";
+            let shadowColor = "rgba(0,0,0,0)";
+
+            if (n.status === "online") {
+                colorBg = "#0b281d";
+                colorBorder = "#3be188";
+                shadowColor = "rgba(59, 225, 136, 0.4)";
+            } else if (n.status === "offline") {
+                colorBg = "#3c1218";
+                colorBorder = "#ff6b7c";
+                shadowColor = "rgba(255, 107, 124, 0.4)";
+            } else if (n.status === "auth_failed") {
+                colorBg = "#3d2d0f";
+                colorBorder = "#ffb84d";
+                shadowColor = "rgba(255, 184, 77, 0.4)";
+            } else if (n.status === "discovered") {
+                colorBg = "#161e2a";
+                colorBorder = "#a3a3a3";
+                shadowColor = "rgba(163, 163, 163, 0.2)";
+            }
+
+            return {
+                id: n.id,
+                label: `${n.label}\n(${n.id})`,
+                font: { color: "#f0f4f9", face: "Satoshi", size: 12, bold: true },
+                shape: "box",
+                margin: 10,
+                color: {
+                    background: colorBg,
+                    border: colorBorder,
+                    highlight: { background: colorBg, border: "#2cbcc3" }
+                },
+                shadow: {
+                    enabled: true,
+                    color: shadowColor,
+                    size: 8,
+                    x: 0,
+                    y: 0
+                },
+                borderWidth: 2,
+                borderWidthSelected: 3
+            };
+        });
+
+        // Trasforma archi per Vis.js
+        const edges = data.links.map(l => {
+            return {
+                from: l.source,
+                to: l.target,
+                label: `L: ${l.local_port} -> R: ${l.remote_port}`,
+                font: { color: "#8d9bb0", size: 10, face: "JetBrains Mono", strokeWidth: 0 },
+                color: { color: "rgba(44, 188, 195, 0.4)", highlight: "#2cbcc3" },
+                arrows: { to: { enabled: false } },
+                width: 2
+            };
+        });
+
+        const container = document.getElementById("networkGraphContainer");
+        const graphData = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+        const options = {
+            physics: {
+                barnesHut: { gravitationalConstant: -3000, centralGravity: 0.3, springLength: 150 }
+            },
+            interaction: { hover: true }
+        };
+
+        if (networkInstance) {
+            networkInstance.destroy();
+        }
+        networkInstance = new vis.Network(container, graphData, options);
+    }
+
+    // --- TAB 3: THREAT INTEL VULNERABILITY CHECKER (EUVD) ---
+
+    async function loadThreatIntel(versions) {
+        const container = document.getElementById("securityTriageContainer");
+        container.innerHTML = `<div style="text-align:center; padding: 40px; color:var(--text-muted);"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><br><br>Interrogando database ENISA EUVD...</div>`;
+
+        const devices = globalDevices;
+        let onlineDevices = devices.filter(d => {
+            const v = versions[d.IP];
+            return v && v.status === "online" && v.version !== "Non Rilevata" && v.version !== "Unknown";
+        });
+
+        if (onlineDevices.length === 0) {
+            container.innerHTML = `<div style="padding: 20px; border: 1px solid var(--border); border-radius:8px; text-align:center; color: var(--text-muted);">
+                Nessun apparato online con firmware rilevato. Esegui prima un <strong>Triage Globale</strong>.
+            </div>`;
+            return;
+        }
+
+        container.innerHTML = "";
+
+        for (const d of onlineDevices) {
+            const scan = versions[d.IP];
+            
+            // Creiamo un wrapper card per questo dispositivo
+            const devCard = document.createElement("div");
+            devCard.className = "vuln-card";
+            devCard.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div>
+                        <span style="font-size:18px; font-weight:700;"><i class="fa-solid fa-server" style="color:var(--primary);"></i> ${d.IP}</span>
+                        <span class="badge" style="margin-left: 10px;">${d.Vendor.toUpperCase()}</span>
+                        <span style="color:var(--text-muted); margin-left: 10px; font-size:13px;">Firmware: <code>${scan.version}</code></span>
+                    </div>
+                    <div id="status-${d.IP.replace(/\./g, '-')}" style="font-size:13px; font-weight:700;">Scansione in corso...</div>
+                </div>
+                <div id="results-${d.IP.replace(/\./g, '-')}" style="display:flex; flex-direction:column; gap:10px;"></div>
+            `;
+            container.appendChild(devCard);
+
+            // Interroga il database tramite il nostro proxy locale
+            // Cerchiamo le vulnerabilità filtrando per il vendor e text=versione del firmware
+            const queryUrl = `/api/search?vendor=${encodeURIComponent(d.Vendor)}&text=${encodeURIComponent(scan.version)}&size=3`;
+            
+            try {
+                const res = await fetch(queryUrl, { headers: getAuthHeaders() });
+                const statusLabel = document.getElementById(`status-${d.IP.replace(/\./g, '-')}`);
+                const resultsContainer = document.getElementById(`results-${d.IP.replace(/\./g, '-')}`);
+
+                if (res.ok) {
+                    const vulnData = await res.json();
+                    
+                    // La risposta EUVD solitamente ha un array nella chiave "results" o simile.
+                    // Adattiamoci ai due formati comuni di EUVD response
+                    const items = vulnData.results || vulnData.content || vulnData || [];
+
+                    if (items.length > 0) {
+                        statusLabel.innerHTML = `<span style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> ${items.length} Vulnerabilità Rilevate</span>`;
+                        
+                        // Renderizziamo i primi 3 CVE trovati
+                        items.slice(0, 3).forEach(v => {
+                            const enisaId = v.enisaId || v.id || "EUVD-Unknown";
+                            const cveId = v.cveId || v.cve || "N/A";
+                            const description = v.description || v.summary || "Descrizione non disponibile in lingua italiana.";
+                            const score = v.cvssScore || v.score || "N/A";
+                            
+                            let severity = "MEDIUM";
+                            if (score !== "N/A") {
+                                const num = parseFloat(score);
+                                if (num >= 9.0) severity = "CRITICAL";
+                                else if (num >= 7.0) severity = "HIGH";
+                                else if (num >= 4.0) severity = "MEDIUM";
+                                else severity = "LOW";
+                            }
+
+                            resultsContainer.innerHTML += `
+                                <div style="background:var(--surface-3); border: 1px solid var(--border); padding: 12px; border-radius: 6px; font-size:13px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+                                        <div>
+                                            <strong style="color:var(--primary);">${enisaId}</strong> 
+                                            <span style="color:var(--text-muted); margin-left:8px;">(CVE: ${cveId})</span>
+                                        </div>
+                                        <span class="severity-pill severity-${severity}">CVSS: ${score}</span>
+                                    </div>
+                                    <div style="color:var(--text-muted); margin-bottom:6px; line-height:1.4;">${description}</div>
+                                    <div style="font-size:10px; color:var(--primary);"><i class="fa-solid fa-scale-balanced"></i> Rilevante per requisiti NIS2 & ENISA</div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        statusLabel.innerHTML = `<span style="color: var(--success);"><i class="fa-solid fa-circle-check"></i> Firmware Sicuro</span>`;
+                        resultsContainer.innerHTML = `<div style="color:var(--text-muted); font-size:13px; font-style:italic;">Nessuna minaccia nota trovata nel database europeo ENISA EUVD per questa release.</div>`;
+                    }
+                } else {
+                    statusLabel.innerHTML = `<span style="color: var(--warning);"><i class="fa-solid fa-triangle-exclamation"></i> Errore Database</span>`;
+                    resultsContainer.innerHTML = `<div style="color:var(--text-muted); font-size:13px;">Impossibile comunicare con il Database EUVD ENISA. Riprova più tardi.</div>`;
+                }
+            } catch (err) {
+                document.getElementById(`status-${d.IP.replace(/\./g, '-')}`).innerHTML = `<span style="color: var(--warning);">Errore</span>`;
+            }
+        }
+    }
+
+    // --- TAB MANAGEMENT ---
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        
+        // Imposta attiva la tab che ha scatenato l'evento
+        event.currentTarget.classList.add('active');
+
+        if (tabId === 'tab-network-map') {
+            loadNetworkMap();
+        } else if (tabId === 'tab-security') {
+            // Riesegue il fetch dell'inventario per avere i firmware e poi carica la Threat Intel
+            fetch("/api/local-devices", { headers: getAuthHeaders() }).then(res => res.json()).then(data => {
+                loadThreatIntel(data.detected_versions);
+            });
+        }
+    }
+
+    // --- UPLOAD CSV INVENTARIO ---
+
+    document.getElementById('btnUploadCsv').addEventListener('click', async () => {
         const fileInput = document.getElementById('csvFileInput');
-        if (fileInput.files.length === 0) { alert("Seleziona un file CSV da caricare"); return; }
+        if (fileInput.files.length === 0) { alert("Seleziona un file CSV da caricare."); return; }
         
         const file = fileInput.files[0];
         const reader = new FileReader();
         reader.onload = async function(e) {
             const text = e.target.result;
-            const res = await fetch('/api/import-csv', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ csv_data: text })
-            });
-            if(res.ok) {
-                alert("Importazione massiva completata!");
-                loadInventory();
-                switchTab('tab-inventory');
+            try {
+                const res = await fetch('/api/import-csv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+                    body: JSON.stringify({ csv_data: text })
+                });
+                if(res.ok) {
+                    alert("Importazione massiva completata con successo!");
+                    fileInput.value = "";
+                    await loadGroups();
+                    await loadInventory();
+                    
+                    // Ritorna all'inventario
+                    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                    document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+                    document.getElementById('tab-inventory').classList.add('active');
+                    document.querySelector("[onclick=\"switchTab('tab-inventory')\"]").classList.add('active');
+                } else {
+                    alert("Errore durante l'importazione del CSV.");
+                }
+            } catch (err) {
+                alert(`Errore di comunicazione: ${err}`);
             }
         };
         reader.readAsText(file);
     });
 
-    window.onload = loadInventory;
+    window.onload = initializeApp;
   </script>
 </body>
 </html>
