@@ -3,10 +3,11 @@ import re
 import logging
 from netmiko import ConnectHandler
 from ping3 import ping
-from inventory_manager import update_version_inventory, get_all_devices
+from inventory_manager import update_version_inventory, get_all_devices, get_detected_versions
 from drivers.cisco_ios import CiscoIosDriver
 from drivers.hp_procurve import HpProcurveDriver
-from security_manager import decrypt_credentials
+from crypto_vault import decrypt_password
+from security_manager import log_audit
 
 BACKUP_FOLDER = 'backup-config'
 logging.basicConfig(filename='error_log.txt', level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -14,10 +15,10 @@ logging.basicConfig(filename='error_log.txt', level=logging.ERROR, format='%(asc
 if not os.path.exists(BACKUP_FOLDER):
     os.makedirs(BACKUP_FOLDER)
 
-# Credenziali di default per il Profilo Rete Standard
-DEFAULT_USERNAME = "Admin"
-DEFAULT_PASSWORD = "admin"
-DEFAULT_SECRET = "admin"
+# Credenziali di default per il Profilo Rete Standard caricate da variabili d'ambiente
+DEFAULT_USERNAME = os.getenv("NET_MANAGER_ADMIN_USER", "Admin")
+DEFAULT_PASSWORD = os.getenv("NET_MANAGER_ADMIN_PASS", "admin")
+DEFAULT_SECRET = os.getenv("NET_MANAGER_ADMIN_SECRET", "admin")
 
 def sanitize_filename(filename):
     return ''.join('_' if char in r'\/:*?"<>|' else char for char in filename)
@@ -30,9 +31,9 @@ def get_device_credentials(device):
         return DEFAULT_USERNAME, DEFAULT_PASSWORD, DEFAULT_SECRET
     
     # Altrimenti restituiamo quelle definite nel CSV decifrate, con fallback su quelle standard se vuote
-    username = decrypt_credentials(device.get('Username')) or DEFAULT_USERNAME
-    password = decrypt_credentials(device.get('Password')) or DEFAULT_PASSWORD
-    secret = decrypt_credentials(device.get('Enable Secret')) or DEFAULT_SECRET
+    username = decrypt_password(device.get('Username')) or DEFAULT_USERNAME
+    password = decrypt_password(device.get('Password')) or DEFAULT_PASSWORD
+    secret = decrypt_password(device.get('Enable Secret')) or DEFAULT_SECRET
     return username, password, secret
 
 def driver_factory(vendor, connection):
@@ -52,6 +53,7 @@ def run_backup_and_triage(device):
     
     if ping(ip) is None:
         update_version_inventory(ip, vendor, "Non Rilevata", "offline")
+        log_audit(f"Triage fallito per dispositivo '{ip}': non raggiungibile via ping.")
         return {"status": "error", "message": f"Device {ip} non raggiungibile via ping"}
 
     username, password, secret = get_device_credentials(device)
@@ -118,12 +120,14 @@ def run_backup_and_triage(device):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(config_out)
                 
+            log_audit(f"Triage e backup completati con successo per dispositivo '{ip}' (Firmware: '{version}').")
             return {"status": "success", "version": version, "file": file_path}
             
     except Exception as e:
         logging.error(f"Errore su {ip}: {str(e)}")
         status = "auth_failed" if "auth" in str(e).lower() or "credentials" in str(e).lower() else "offline"
         update_version_inventory(ip, vendor, "Non Rilevata", status)
+        log_audit(f"Triage fallito per dispositivo '{ip}': errore di connessione/autenticazione ({str(e)}).")
         return {"status": "error", "message": str(e)}
 
 def send_custom_command(device, command):
@@ -143,8 +147,10 @@ def send_custom_command(device, command):
         with ConnectHandler(**device_params) as net_connect:
             net_connect.enable()
             output = net_connect.send_command(command)
+            log_audit(f"Comando CLI '{command}' eseguito con successo sul dispositivo '{device['IP']}'.")
             return {"status": "success", "output": output}
     except Exception as e:
+        log_audit(f"Esecuzione comando CLI '{command}' fallita sul dispositivo '{device['IP']}': {str(e)}")
         return {"status": "error", "message": str(e)}
 
 # --- MOTORE EURISTICO DI NETWORK MAPPING ---
@@ -297,14 +303,17 @@ def generate_network_map() -> dict:
         hostname_to_ip[hostname.lower()] = ip
 
     # 3. Crea i Nodi per tutti i dispositivi in inventario
+    versions = get_detected_versions()
     for ip, d in ip_to_device.items():
         # Se abbiamo letto il backup, usiamo l'hostname reale, altrimenti l'IP
         label = parsed_devices.get(ip, {}).get("hostname", ip)
+        scan = versions.get(ip, {"status": "offline"})
+        status = scan.get("status", "offline")
         nodes_map[ip] = {
             "id": ip,
             "label": label,
             "group": d.get('Group', 'Generale'),
-            "status": "online" if ip in parsed_devices else "offline"
+            "status": status
         }
 
     # 4. Secondo passaggio: Costruisce i Collegamenti (Links) e scopre nodi non censiti

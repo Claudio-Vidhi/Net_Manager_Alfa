@@ -15,20 +15,21 @@ JWT_SECRET_KEY = hashlib.sha256(_key).hexdigest()
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-# --- CRYPTOGRAPHY ---
+import logging
 
-def encrypt_credentials(plain_text: str) -> str:
-    """Cifra una stringa di credenziali delegando a crypto_vault."""
-    return encrypt_password(plain_text)
+# Configurazione logger di Audit protetto
+AUDIT_LOG_FILE = "audit.log"
+audit_logger = logging.getLogger("audit")
+audit_logger.setLevel(logging.INFO)
 
-def decrypt_credentials(cipher_text: str) -> str:
-    """Decifra una stringa usando crypto_vault, con fallback per retrocompatibilità."""
-    if not cipher_text:
-        return ""
-    decrypted = decrypt_password(cipher_text)
-    if decrypted == "decryption_error":
-        return cipher_text  # Fallback al testo originale (dati in chiaro)
-    return decrypted
+if not audit_logger.handlers:
+    fh = logging.FileHandler(AUDIT_LOG_FILE, encoding="utf-8")
+    fh.setFormatter(logging.Formatter('%(asctime)s - [AUDIT] - %(message)s'))
+    audit_logger.addHandler(fh)
+
+def log_audit(message: str):
+    """Scrive un record di tracciabilità all'interno del registro sicuro audit.log."""
+    audit_logger.info(message)
 
 # --- JWT AUTHENTICATION ---
 

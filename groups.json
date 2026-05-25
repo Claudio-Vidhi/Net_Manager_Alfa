@@ -1,4 +1,11 @@
-[
-    "Generale",
-    "Sede_Roma"
-]
+{
+    "Generale": {
+        "description": "Sede Principale predefinita"
+    },
+    "Sede_Roma": {
+        "description": "Sede secondaria Sede_Roma"
+    },
+    "test": {
+        "description": "Sede secondaria test"
+    }
+}

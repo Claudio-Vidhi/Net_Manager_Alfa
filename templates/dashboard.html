@@ -690,15 +690,15 @@
       <div id="customCredsForm" style="display:none; border-left: 2px solid var(--primary); padding-left: 10px; margin-bottom: 10px;">
         <div class="form-group">
           <label>Username</label>
-          <input id="devUser" type="text" value="Admin" style="padding-left:12px;">
+          <input id="devUser" type="text" placeholder="Admin" style="padding-left:12px;">
         </div>
         <div class="form-group">
           <label>Password</label>
-          <input id="devPass" type="password" value="admin" style="padding-left:12px;">
+          <input id="devPass" type="password" placeholder="admin" style="padding-left:12px;">
         </div>
         <div class="form-group">
           <label>Enable Secret</label>
-          <input id="devSecret" type="password" value="admin" style="padding-left:12px;">
+          <input id="devSecret" type="password" placeholder="admin" style="padding-left:12px;">
         </div>
       </div>
       
@@ -722,22 +722,22 @@
   <!-- Area Centrale Principale -->
   <main>
     <div class="tab-nav">
-      <button class="tab-button active" onclick="switchTab('tab-devices')">
+      <button class="tab-button active" onclick="switchTab('tab-devices', this)">
         <i class="fa-solid fa-list-check"></i> Network Inventory
       </button>
-      <button class="tab-button" onclick="switchTab('tab-groups')">
+      <button class="tab-button" onclick="switchTab('tab-groups', this)">
         <i class="fa-solid fa-folder-open"></i> Gestione Gruppi/Sedi
       </button>
-      <button class="tab-button" onclick="switchTab('tab-map')">
+      <button class="tab-button" onclick="switchTab('tab-map', this)">
         <i class="fa-solid fa-route"></i> CDP/LLDP Adjacency List
       </button>
-      <button class="tab-button" onclick="switchTab('tab-map-interactive')">
+      <button class="tab-button" onclick="switchTab('tab-map-interactive', this)">
         <i class="fa-solid fa-circle-nodes"></i> Mappa Topologia 2D
       </button>
-      <button class="tab-button" onclick="switchTab('tab-security')">
+      <button class="tab-button" onclick="switchTab('tab-security', this)">
         <i class="fa-solid fa-shield-virus"></i> Threat Intel (EUVD)
       </button>
-      <button class="tab-button" onclick="switchTab('tab-import')">
+      <button class="tab-button" onclick="switchTab('tab-import', this)">
         <i class="fa-solid fa-file-csv"></i> Importazione CSV
       </button>
     </div>
@@ -896,7 +896,7 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
     // --- AUTENTICAZIONE E UTILITY ---
 
     function getAuthHeaders() {
-        const token = localStorage.getItem("net_token");
+        const token = sessionStorage.getItem("net_token");
         return token ? { "Authorization": `Bearer ${token}` } : {};
     }
 
@@ -906,7 +906,7 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
         const data = await res.json();
         
         const overlay = document.getElementById('authOverlay');
-        const token = localStorage.getItem("net_token");
+        const token = sessionStorage.getItem("net_token");
 
         if (!data.has_users) {
             // Nessun utente su disco: mostriamo la procedura guidata di primo setup
@@ -968,7 +968,7 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
             const data = await res.json();
             // Salva il token JWT per autenticare le chiamate API successive
             if (data.access_token) {
-                localStorage.setItem("net_token", data.access_token);
+                sessionStorage.setItem("net_token", data.access_token);
             }
             // Sblocca la UI nascondendo la schermata oscurante
             document.getElementById('authOverlay').style.display = 'none';
@@ -980,7 +980,7 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
     });
 
     function logout() {
-        localStorage.removeItem("net_token");
+        sessionStorage.removeItem("net_token");
         checkAuthRequirements();
     }
 
@@ -1139,11 +1139,13 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
 
     // --- TABS & TOPOLOGY LIST VIEW ---
 
-    function switchTab(tabId) {
+    function switchTab(tabId, clickedBtn) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
-        event.currentTarget.classList.add('active');
+        if (clickedBtn) {
+            clickedBtn.classList.add('active');
+        }
         
         if(tabId === 'tab-map') loadTopology();
         else if(tabId === 'tab-map-interactive') loadInteractiveMap();
@@ -1439,8 +1441,39 @@ Consiglio: invia un comando come "show version", "show run" o "show ip interface
         }
     }
 
-    function downloadBackup(ip) {
-        window.location.href = `/api/download-backup/${ip}?access_token=${localStorage.getItem("net_token")}`;
+    async function downloadBackup(ip) {
+        try {
+            const res = await fetch(`/api/download-backup/${ip}`, {
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) {
+                if (res.status === 401) { logout(); return; }
+                alert("Errore durante il download del backup.");
+                return;
+            }
+            const blob = await res.blob();
+            const disposition = res.headers.get('content-disposition');
+            let filename = `${ip}.txt`;
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) { 
+                    filename = matches[1].replace(/['"]/g, '');
+                }
+            }
+            
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            alert("Errore di rete durante il download.");
+        }
     }
 
     // --- CSV UPLOAD ---

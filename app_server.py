@@ -18,16 +18,15 @@ from pydantic import BaseModel, Field
 
 import inventory_manager
 import core_engine
-import topology_engine
 import user_manager
-from security_manager import create_access_token, verify_access_token
+from security_manager import create_access_token, verify_access_token, log_audit
 
 PORT = 8765
 BASE_URL = "https://euvdservices.enisa.europa.eu"
 
 app = FastAPI(title="Net Manager Alfa API", version="2.0.0")
 
-# Abilita CORS
+# Abilita CORS (Nota: allow_origins=["*"] è abilitato per lo sviluppo locale, da cambiare in produzione)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -73,8 +72,12 @@ class DeviceSchema(BaseModel):
     group: str = "Generale"
 
 class GroupSchema(BaseModel):
-    name: str
+    name: Optional[str] = None
+    group_name: Optional[str] = None
     description: str = ""
+
+class GroupDeleteSchema(BaseModel):
+    name: str
 
 class LoginRequest(BaseModel):
     username: str
@@ -90,8 +93,9 @@ class CommandRequest(BaseModel):
     ip: str
     command: str
 
-# --- STATO DEI JOB DI TRIAGE IN BACKGROUND ---
+# --- STATO DEI JOB DI TRIAGE IN BACKGROUND CON LOCK ---
 
+triage_lock = threading.Lock()
 triage_job = {
     "status": "idle",       # "idle", "running", "complete"
     "progress": 0,
@@ -103,19 +107,23 @@ triage_job = {
 def run_triage_background():
     global triage_job
     devices = inventory_manager.get_all_devices()
-    triage_job["status"] = "running"
-    triage_job["total"] = len(devices)
-    triage_job["progress"] = 0
-    triage_job["results"] = []
+    with triage_lock:
+        triage_job["status"] = "running"
+        triage_job["total"] = len(devices)
+        triage_job["progress"] = 0
+        triage_job["results"] = []
     
     for d in devices:
-        triage_job["current_device"] = d['IP']
+        with triage_lock:
+            triage_job["current_device"] = d['IP']
         res = core_engine.run_backup_and_triage(d)
-        triage_job["results"].append({"ip": d['IP'], "result": res})
-        triage_job["progress"] += 1
+        with triage_lock:
+            triage_job["results"].append({"ip": d['IP'], "result": res})
+            triage_job["progress"] += 1
         
-    triage_job["status"] = "complete"
-    triage_job["current_device"] = ""
+    with triage_lock:
+        triage_job["status"] = "complete"
+        triage_job["current_device"] = ""
 
 # --- ROTTE PRINCIPALI & INTERFACCIA WEB ---
 
@@ -143,6 +151,7 @@ def setup_admin(payload: LoginRequest):
         )
     success = user_manager.create_user(payload.username, payload.password)
     if success:
+        log_audit(f"Nuovo utente amministratore '{payload.username}' registrato con successo via Setup Wizard.")
         return {"status": "success", "message": "Primo account amministratore creato correttamente."}
     raise HTTPException(status_code=400, detail="Impossibile creare l'account.")
 
@@ -150,7 +159,9 @@ def setup_admin(payload: LoginRequest):
 def login(payload: LoginRequest):
     if user_manager.verify_user(payload.username, payload.password):
         access_token = create_access_token(data={"sub": payload.username})
+        log_audit(f"Utente '{payload.username}' loggato con successo.")
         return {"access_token": access_token, "token_type": "bearer"}
+    log_audit(f"Tentativo di login fallito per l'utente '{payload.username}' (credenziali errate).")
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED, 
         detail="Credenziali amministratore non valide o utente non registrato."
@@ -172,11 +183,13 @@ def add_device(device: DeviceSchema, current_user = Depends(get_current_user)):
         device.ip, device.vendor, device.profile,
         device.username, device.password, device.enable_secret, device.group
     )
+    log_audit(f"Dispositivo '{device.ip}' (vendor: '{device.vendor}', gruppo: '{device.group}') aggiunto/aggiornato dall'utente '{current_user.get('sub')}'.")
     return {"status": "success", "message": "Dispositivo salvato"}
 
 @app.post("/api/delete-device")
-def delete_device(payload: dict, current_user = Depends(get_current_user)):
-    inventory_manager.delete_device(payload.get('ip'))
+def delete_device(payload: DeviceDelete, current_user = Depends(get_current_user)):
+    inventory_manager.delete_device(payload.ip)
+    log_audit(f"Dispositivo '{payload.ip}' eliminato dall'inventario dall'utente '{current_user.get('sub')}'.")
     return {"status": "success"}
 
 @app.post("/api/import-csv")
@@ -184,6 +197,7 @@ def import_csv(payload: CSVImportRequest, current_user = Depends(get_current_use
     lines = payload.csv_data.split('\n')
     import csv as csv_parser
     reader = csv_parser.DictReader(lines)
+    count = 0
     for row in reader:
         if row.get('IP'):
             inventory_manager.add_or_update_device(
@@ -191,6 +205,8 @@ def import_csv(payload: CSVImportRequest, current_user = Depends(get_current_use
                 row.get('Username', 'Admin'), row.get('Password', 'admin'), row.get('Enable Secret', 'admin'),
                 row.get('Group', 'Generale')
             )
+            count += 1
+    log_audit(f"Importazione massiva completata: {count} apparati importati da CSV dall'utente '{current_user.get('sub')}'.")
     return {"status": "success", "message": "CSV Importato"}
 
 # --- CRUD GESTIONE GRUPPI VIA WEB UI ---
@@ -201,88 +217,71 @@ def list_groups(current_user = Depends(get_current_user)):
 
 @app.post("/api/groups")
 def create_group(group: GroupSchema, current_user = Depends(get_current_user)):
+    name = group.name or group.group_name
+    if not name:
+        raise HTTPException(status_code=400, detail="Il nome del gruppo è obbligatorio.")
     groups = inventory_manager.get_all_groups()
-    groups[group.name] = {"description": group.description}
+    groups[name] = {"description": group.description}
     inventory_manager.save_groups(groups)
+    log_audit(f"Gruppo '{name}' (descrizione: '{group.description}') creato dall'utente '{current_user.get('sub')}'.")
     return {"status": "success", "message": "Gruppo creato"}
 
 @app.post("/api/groups/delete")
-def remove_group(payload: dict, current_user = Depends(get_current_user)):
-    group_name = payload.get('name')
+def remove_group(payload: GroupDeleteSchema, current_user = Depends(get_current_user)):
+    group_name = payload.name
     groups = inventory_manager.get_all_groups()
     if group_name in groups and group_name != "Generale":
-        del groups[group_name]
-        inventory_manager.save_groups(groups)
+        inventory_manager.delete_group(group_name)
+        log_audit(f"Gruppo '{group_name}' eliminato dall'utente '{current_user.get('sub')}'. Tutti i relativi apparati sono riassegnati a 'Generale'.")
         return {"status": "success"}
     raise HTTPException(status_code=400, detail="Impossibile eliminare il gruppo")
+
+# --- ENDPOINTS COSTRUZIONE MAPPA TOPOLOGICA ---
 
 # --- ENDPOINTS COSTRUZIONE MAPPA TOPOLOGICA ---
 
 @app.get("/api/topology")
 @app.get("/api/network-map")
 def get_network_topology(current_user = Depends(get_current_user)):
-    topo = topology_engine.parse_topology_from_backups()
-    
-    devices = inventory_manager.get_all_devices()
-    versions = inventory_manager.get_detected_versions()
-    
-    # Arricchisce i nodi con gruppi e stati reali dall'inventario
-    for node in topo["nodes"]:
-        node_id = node["id"]
-        # Cerca un IP all'interno del node_id (es. SwitchA-10.0.0.1 -> 10.0.0.1)
-        ip_match = re.search(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', node_id)
-        ip = ip_match.group(1) if ip_match else None
-        
-        node["group"] = "Discovered"
-        node["status"] = "discovered"
-        
-        if ip:
-            device = next((d for d in devices if d['IP'] == ip), None)
-            if device:
-                node["group"] = device.get("Group", "Generale")
-                scan = versions.get(ip, {"status": "offline"})
-                node["status"] = scan.get("status", "offline")
-                
-    # Assicura le chiavi local_port e remote_port per la visualizzazione dei link nella UI
-    for link in topo["links"]:
-        if "local_port" not in link:
-            link["local_port"] = "Vicino"
-        if "remote_port" not in link:
-            link["remote_port"] = "Vicino"
-            
-    return topo
+    return core_engine.generate_network_map()
 
 # --- ROTTE AUTOMAZIONE & DOWNLOAD ---
 
 @app.post("/api/run-triage")
-def run_triage(background_tasks: BackgroundTasks, current_user = Depends(get_current_user)):
+def run_triage(current_user = Depends(get_current_user)):
     global triage_job
-    if triage_job["status"] == "running":
-        return {"status": "running", "message": "Scansione già in corso"}
+    with triage_lock:
+        if triage_job["status"] == "running":
+            return {"status": "running", "message": "Scansione già in corso"}
+        
+        triage_job["status"] = "running"
+        triage_job["progress"] = 0
+        triage_job["total"] = 0
+        triage_job["current_device"] = "Inizializzazione..."
     
-    triage_job["status"] = "running"
-    triage_job["progress"] = 0
-    triage_job["total"] = 0
-    triage_job["current_device"] = "Inizializzazione..."
-    
-    background_tasks.add_task(run_triage_background)
+    log_audit(f"Triage globale in background avviato dall'utente '{current_user.get('sub')}'.")
+    thread = threading.Thread(target=run_triage_background, daemon=True)
+    thread.start()
     return {"status": "running", "message": "Scansione avviata in background"}
 
 @app.get("/api/triage-status")
 def get_triage_status(current_user = Depends(get_current_user)):
-    return triage_job
+    with triage_lock:
+        return dict(triage_job)
 
 @app.post("/api/send-command")
 def send_command(payload: CommandRequest, current_user = Depends(get_current_user)):
     devices = inventory_manager.get_all_devices()
     target_device = next((d for d in devices if d['IP'] == payload.ip), None)
     if target_device:
+        log_audit(f"Comando CLI '{payload.command}' richiesto su dispositivo '{payload.ip}' dall'utente '{current_user.get('sub')}'.")
         res = core_engine.send_custom_command(target_device, payload.command)
         return res
     raise HTTPException(status_code=404, detail="Dispositivo non presente in inventario")
 
 @app.get("/api/download-backup/{ip_or_filename}")
 def download_backup(ip_or_filename: str, current_user = Depends(get_current_user)):
+    log_audit(f"Download del file di backup '{ip_or_filename}' richiesto dall'utente '{current_user.get('sub')}'.")
     filepath = os.path.join("backup-config", ip_or_filename)
     if os.path.exists(filepath):
         return FileResponse(filepath, media_type="application/octet-stream", filename=ip_or_filename)
@@ -303,29 +302,20 @@ def download_backup(ip_or_filename: str, current_user = Depends(get_current_user
                 
     raise HTTPException(status_code=404, detail="File di backup non trovato per questo dispositivo.")
 
-# --- PROXY TRASPARENTE VERSO ENISA EUVD ---
+# --- PROXY MIRATO VERSO ENISA EUVD (SOSTITUISCE IL CATCH-ALL PERICOLOSO) ---
 
-@app.api_route("/api/{path:path}", methods=["GET", "POST", "OPTIONS"])
-async def proxy_enisa(path: str, request: Request, current_user = Depends(get_current_user)):
-    target = f"{BASE_URL}/api/{path}"
+@app.get("/api/search")
+async def proxy_enisa_search(request: Request, current_user = Depends(get_current_user)):
+    target = f"{BASE_URL}/api/search"
     query = request.url.query
     if query:
         target += f"?{query}"
         
     try:
         headers = {"User-Agent": "ThreatIntelDashboard/3.0"}
-        method = request.method
+        from fastapi.concurrency import run_in_threadpool
+        r = await run_in_threadpool(requests.get, target, headers=headers, timeout=15)
         
-        if method == "GET":
-            from fastapi.concurrency import run_in_threadpool
-            r = await run_in_threadpool(requests.get, target, headers=headers, timeout=15)
-        elif method == "POST":
-            body = await request.body()
-            from fastapi.concurrency import run_in_threadpool
-            r = await run_in_threadpool(requests.post, target, headers=headers, data=body, timeout=15)
-        else:
-            return Response(status_code=200)
-            
         return Response(
             content=r.content, 
             status_code=r.status_code, 

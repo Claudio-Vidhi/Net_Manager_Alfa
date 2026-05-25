@@ -9,17 +9,80 @@ VERSION_DATA_FILE = "detected_versions.json"
 
 def get_all_groups():
     if not os.path.exists(GROUPS_JSON):
-        # Gruppo di fallback iniziale
         default_groups = {"Generale": {"description": "Sede Principale predefinita"}}
-        with open(GROUPS_JSON, "w", encoding="utf-8") as f:
-            json.dump(default_groups, f, indent=4)
+        save_groups(default_groups)
         return default_groups
     with open(GROUPS_JSON, "r", encoding="utf-8") as f:
-        return json.load(f)
+        try:
+            data = json.load(f)
+            if isinstance(data, list):
+                # Convert legacy list to dictionary format
+                new_dict = {}
+                for g in data:
+                    new_dict[g] = {"description": "Sede Principale predefinita" if g == "Generale" else f"Sede secondaria {g}"}
+                save_groups(new_dict)
+                return new_dict
+            return data
+        except Exception:
+            default_groups = {"Generale": {"description": "Sede Principale predefinita"}}
+            save_groups(default_groups)
+            return default_groups
 
 def save_groups(groups_dict):
-    with open(GROUPS_JSON, "w", encoding="utf-8") as f:
-        json.dump(groups_dict, f, indent=4)
+    temp_filename = GROUPS_JSON + ".tmp"
+    try:
+        with open(temp_filename, "w", encoding="utf-8") as f:
+            json.dump(groups_dict, f, indent=4)
+        try:
+            os.replace(temp_filename, GROUPS_JSON)
+        except PermissionError:
+            # Fallback per sistemi Windows in cui il file di destinazione è concorrentemente bloccato
+            with open(GROUPS_JSON, "w", encoding="utf-8") as f:
+                json.dump(groups_dict, f, indent=4)
+            if os.path.exists(temp_filename):
+                try:
+                    os.remove(temp_filename)
+                except:
+                    pass
+    except Exception as e:
+        if os.path.exists(temp_filename):
+            try:
+                os.remove(temp_filename)
+            except:
+                pass
+        raise e
+
+def safe_write_hosts_csv(devices):
+    temp_filename = HOSTS_CSV + ".tmp"
+    try:
+        with open(temp_filename, mode='w', newline='', encoding='utf-8') as f:
+            fieldnames = ['IP', 'Vendor', 'Profile', 'Username', 'Password', 'Enable Secret', 'Group']
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for d in devices:
+                writer.writerow(d)
+        try:
+            os.replace(temp_filename, HOSTS_CSV)
+        except PermissionError:
+            # Fallback per sistemi Windows
+            with open(HOSTS_CSV, mode='w', newline='', encoding='utf-8') as f:
+                fieldnames = ['IP', 'Vendor', 'Profile', 'Username', 'Password', 'Enable Secret', 'Group']
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for d in devices:
+                    writer.writerow(d)
+            if os.path.exists(temp_filename):
+                try:
+                    os.remove(temp_filename)
+                except:
+                    pass
+    except Exception as e:
+        if os.path.exists(temp_filename):
+            try:
+                os.remove(temp_filename)
+            except:
+                pass
+        raise e
 
 def get_all_devices():
     devices = []
@@ -35,7 +98,6 @@ def add_or_update_device(ip, vendor, profile, username, password, enable_secret,
     devices = get_all_devices()
     devices = [d for d in devices if d['IP'] != ip]
     
-    # Cifratura di sicurezza delle credenziali prima della scrittura su disco
     enc_password = crypto_vault.encrypt_password(password)
     enc_secret = crypto_vault.encrypt_password(enable_secret)
 
@@ -45,23 +107,12 @@ def add_or_update_device(ip, vendor, profile, username, password, enable_secret,
         'Group': group if group in get_all_groups() else 'Generale'
     }
     devices.append(new_device)
-    
-    with open(HOSTS_CSV, mode='w', newline='', encoding='utf-8') as f:
-        fieldnames = ['IP', 'Vendor', 'Profile', 'Username', 'Password', 'Enable Secret', 'Group']
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for d in devices:
-            writer.writerow(d)
+    safe_write_hosts_csv(devices)
 
 def delete_device(ip):
     devices = get_all_devices()
     devices = [d for d in devices if d['IP'] != ip]
-    with open(HOSTS_CSV, mode='w', newline='', encoding='utf-8') as f:
-        fieldnames = ['IP', 'Vendor', 'Profile', 'Username', 'Password', 'Enable Secret', 'Group']
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for d in devices:
-            writer.writerow(d)
+    safe_write_hosts_csv(devices)
 
 # --- UTILITIES PER RILEVAMENTO VERSIONI (Richieste dal Core Engine e Server) ---
 
@@ -77,8 +128,28 @@ def get_detected_versions():
 def update_version_inventory(ip, vendor, version, status="online"):
     data = get_detected_versions()
     data[ip] = {"vendor": vendor, "version": version, "status": status}
-    with open(VERSION_DATA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=4)
+    temp_filename = VERSION_DATA_FILE + ".tmp"
+    try:
+        with open(temp_filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4)
+        try:
+            os.replace(temp_filename, VERSION_DATA_FILE)
+        except PermissionError:
+            # Fallback per sistemi Windows concorrentemente bloccati
+            with open(VERSION_DATA_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=4)
+            if os.path.exists(temp_filename):
+                try:
+                    os.remove(temp_filename)
+                except:
+                    pass
+    except Exception as e:
+        if os.path.exists(temp_filename):
+            try:
+                os.remove(temp_filename)
+            except:
+                pass
+        raise e
 
 # --- UTILITIES GESTIONE GRUPPI (CRUD) ---
 
@@ -117,12 +188,7 @@ def update_group(old_name: str, new_name: str, description: str = "") -> bool:
                 d['Group'] = new_name
                 updated = True
         if updated:
-            with open(HOSTS_CSV, mode='w', newline='', encoding='utf-8') as f:
-                fieldnames = ['IP', 'Vendor', 'Profile', 'Username', 'Password', 'Enable Secret', 'Group']
-                writer = csv.DictWriter(f, fieldnames=fieldnames)
-                writer.writeheader()
-                for d in devices:
-                    writer.writerow(d)
+            safe_write_hosts_csv(devices)
         return True
     return False
 
@@ -145,11 +211,6 @@ def delete_group(group_name: str) -> bool:
                 d['Group'] = "Generale"
                 updated = True
         if updated:
-            with open(HOSTS_CSV, mode='w', newline='', encoding='utf-8') as f:
-                fieldnames = ['IP', 'Vendor', 'Profile', 'Username', 'Password', 'Enable Secret', 'Group']
-                writer = csv.DictWriter(f, fieldnames=fieldnames)
-                writer.writeheader()
-                for d in devices:
-                    writer.writerow(d)
+            safe_write_hosts_csv(devices)
         return True
     return False
