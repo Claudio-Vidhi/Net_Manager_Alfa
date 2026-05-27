@@ -12,6 +12,7 @@ ENV/
 network_hosts.csv
 detected_versions.json
 users.json
+groups.json
 
 # Network Backup configs
 backup-config/
