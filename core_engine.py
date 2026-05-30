@@ -404,24 +404,27 @@ def generate_network_map(group_filter=None) -> dict:
             local_port = neigh["local_port"]
             remote_port = neigh["remote_port"]
             
+            # Pulisce l'hostname rimuovendo l'eventuale suffisso di dominio FQDN (.lab.local, ecc.)
+            base_neigh_id = neigh_id.split('.')[0] if '.' in neigh_id else neigh_id
+
             # Risoluzione dell'IP del vicino
             target_ip = neigh_ip
             if not target_ip:
-                # Cerca per hostname nella mappa
-                target_ip = hostname_to_ip.get(neigh_id.lower())
+                # Cerca per hostname nella mappa (sia intero che base senza dominio)
+                target_ip = hostname_to_ip.get(neigh_id.lower()) or hostname_to_ip.get(base_neigh_id.lower())
             
             if not target_ip:
-                # Se non riusciamo a trovare l'IP, usiamo l'hostname come ID per il nodo scoperto
-                target_ip = f"discovered_{sanitize_filename(neigh_id)}"
+                # Se non troviamo l'IP, usiamo il nome pulito come ID per evitare duplicati FQDN
+                target_ip = f"discovered_{sanitize_filename(base_neigh_id)}"
                 
             # Se il target non è presente nei nodi, creiamo un nodo "scoperto"
             if target_ip not in nodes_map:
                 nodes_map[target_ip] = {
                     "id": target_ip,
-                    "label": neigh_id,
+                    "label": base_neigh_id,
                     "group": "Discovered",
                     "status": "discovered",
-                    "device_type": get_device_type(neigh_id),
+                    "device_type": get_device_type(base_neigh_id),
                     "vendor": "discovered"
                 }
 
