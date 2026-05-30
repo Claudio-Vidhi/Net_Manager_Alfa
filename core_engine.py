@@ -126,6 +126,11 @@ def run_backup_and_triage(device):
                     config_out += "\n--- SHOW LLDP NEIGHBORS ---\n" + lldp_out
                 except Exception:
                     pass
+                try:
+                    lldp_detail = net_connect.send_command("show lldp neighbors detail")
+                    config_out += "\n--- SHOW LLDP NEIGHBORS DETAIL ---\n" + lldp_detail
+                except Exception:
+                    pass
             elif vendor == 'hpe':
                 try:
                     lldp_out = net_connect.send_command("show lldp info remote-device")
@@ -303,7 +308,63 @@ def parse_cdp_lldp_neighbors(content: str) -> list:
                     "remote_port": remote_port.strip()
                 })
 
-    return neighbors
+    # 6. Parsing di "SHOW LLDP NEIGHBORS DETAIL" (Cisco)
+    lldp_detail_section = re.search(r'--- SHOW LLDP NEIGHBORS DETAIL ---\s*\n(.*?)(?=\n--- [A-Z]|\n===|\Z)', content, re.DOTALL | re.IGNORECASE)
+    if lldp_detail_section:
+        blocks = re.split(r'-{20,}', lldp_detail_section.group(1))
+        for block in blocks:
+            if not block.strip():
+                continue
+            local_port_m = re.search(r'Local Intf:\s*([^\n\r]+)', block, re.IGNORECASE)
+            port_id_m = re.search(r'Port id:\s*([^\n\r]+)', block, re.IGNORECASE)
+            port_desc_m = re.search(r'Port Description:\s*([^\n\r]+)', block, re.IGNORECASE)
+            sys_name_m = re.search(r'System Name:\s*([^\n\r]+)', block, re.IGNORECASE)
+            ip_m = re.search(r'(?:Management Address - IPv4|Management Address|IP Address):\s*([0-9.]+)', block, re.IGNORECASE)
+            sys_desc_m = re.search(r'System Description:\s*([^\n\r]+(?:(?:\n\r?|\r\n?)[ \t]+[^\n\r]+)*)', block, re.IGNORECASE)
+            
+            if sys_name_m:
+                # remote port: prefer Port Description if available, otherwise Port id
+                remote_port = "Unknown"
+                if port_desc_m:
+                    remote_port = port_desc_m.group(1).strip()
+                elif port_id_m:
+                    remote_port = port_id_m.group(1).strip()
+                
+                version_str = None
+                if sys_desc_m:
+                    sys_desc = re.sub(r'\s+', ' ', sys_desc_m.group(1)).strip()
+                    version_str = sys_desc
+                
+                neighbors.append({
+                    "neighbor_id": sys_name_m.group(1).strip(),
+                    "neighbor_ip": ip_m.group(1).strip() if ip_m else None,
+                    "local_port": local_port_m.group(1).strip() if local_port_m else "Unknown",
+                    "remote_port": remote_port,
+                    "version": version_str
+                })
+
+    # Deduplicazione intelligente per rimuovere duplicati FQDN/summary e fondere i dettagli ricchi
+    merged_neighbors = {}
+    for n in neighbors:
+        neigh_id = n["neighbor_id"]
+        base_id = neigh_id.split('.')[0] if '.' in neigh_id else neigh_id
+        
+        # Chiave di deduplicazione: porta locale e hostname base in minuscolo
+        key = (n["local_port"].lower(), base_id.lower())
+        
+        if key not in merged_neighbors:
+            merged_neighbors[key] = dict(n)
+        else:
+            existing = merged_neighbors[key]
+            # Unisci i dettagli
+            if n.get("neighbor_ip") and not existing.get("neighbor_ip"):
+                existing["neighbor_ip"] = n["neighbor_ip"]
+            if n.get("version") and not existing.get("version"):
+                existing["version"] = n["version"]
+            if n.get("remote_port") and n.get("remote_port") != "Unknown" and (existing.get("remote_port") == "Unknown" or len(n.get("remote_port")) < len(existing.get("remote_port")) or ":" not in n.get("remote_port")):
+                existing["remote_port"] = n["remote_port"]
+                
+    return list(merged_neighbors.values())
 
 def generate_network_map(group_filter=None) -> dict:
     """Scansiona la cartella backup-config e genera la mappa di rete (nodi e collegamenti)."""
@@ -425,8 +486,11 @@ def generate_network_map(group_filter=None) -> dict:
                     "group": "Discovered",
                     "status": "discovered",
                     "device_type": get_device_type(base_neigh_id),
-                    "vendor": "discovered"
+                    "vendor": "discovered",
+                    "version": neigh.get("version")
                 }
+            elif neigh.get("version") and not nodes_map[target_ip].get("version"):
+                nodes_map[target_ip]["version"] = neigh.get("version")
 
             # Assicuriamo una chiave univoca per evitare duplicati bidirezionali (es. A->B e B->A)
             link_key = tuple(sorted([source_id, target_ip]))

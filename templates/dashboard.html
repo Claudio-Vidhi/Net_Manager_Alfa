@@ -1437,7 +1437,7 @@
         else if (n.status === "auth_failed") statusLed = `<span style="color: #ffb84d; font-weight: bold;">● AUTH FAILED</span>`;
         else if (n.status === "discovered") statusLed = `<span style="color: #a3a3a3; font-weight: bold;">● DISCOVERED</span>`;
         
-        const firmware = (scan && scan.version) ? scan.version : "Non rilevato / Offline";
+        const firmware = (n.version) ? n.version : ((scan && scan.version) ? scan.version : "Non rilevato / Offline");
         const vendorName = (resolvedVendor && resolvedVendor !== 'discovered') ? resolvedVendor : "Vicino LLDP/CDP";
 
         const htmlString = `
