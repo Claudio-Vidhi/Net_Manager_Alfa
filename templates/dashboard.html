@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Net Manager Alfa Enterprise Edition v3</title>
+  
+  <!-- Satoshi & JetBrains Mono Fonts -->
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,600,700,900&f[]=jetbrains-mono@400,700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <!-- Vis.js Standalone for beautiful Interactive Topologies -->
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+  <!-- Xterm.js CDNs for interactive SSH terminal -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+
+  <style>
+    :root {
+      --bg: #070a0e;
+      --surface: #0f141c;
+      --surface-2: #161e2a;
+      --surface-3: #1d2837;
+      --border: rgba(147, 172, 206, 0.12);
+      --text: #f0f4f9;
+      --text-muted: #8d9bb0;
+      --primary: #2cbcc3;
+      --primary-glow: rgba(44, 188, 195, 0.35);
+      --success: #3be188;
+      --success-glow: rgba(59, 225, 136, 0.35);
+      --danger: #ff6b7c;
+      --danger-glow: rgba(255, 107, 124, 0.35);
+      --warning: #ffb84d;
+      --discovered: #a3a3a3;
+      --radius: 12px;
+      --font-main: 'Satoshi', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-code: 'JetBrains Mono', monospace;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+    /* Login / Setup Glassmorphic Overlay */
+    #authOverlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(7, 10, 14, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: var(--transition);
+    }
+
+    .login-card {
+      background: rgba(15, 20, 28, 0.65);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      width: 420px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      animation: fadeInUp 0.4s ease;
+    }
+
+    .login-card h2 {
+      font-size: 24px;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-weight: 900;
+    }
+
+    .login-card p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+
+    /* Base Layout */
+    aside, main {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    aside {
+      gap: 20px;
+      position: sticky;
+      top: 20px;
+      height: calc(100vh - 40px);
+      overflow-y: auto; /* Abilita lo scorrimento autonomo del form sui monitor piccoli o elenchi lunghi */
+      scrollbar-width: thin;
+    }
+
+    h2, h3 {
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .aside-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Forms elements */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px 12px 10px 36px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      transition: var(--transition);
+    }
+
+    .form-group select {
+      cursor: pointer;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: var(--transition);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #05080c;
+    }
+
+    .btn-primary:hover {
+      background: #39cfd7;
+      box-shadow: 0 0 15px var(--primary-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--surface-2);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-3);
+      border-color: var(--text-muted);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      background: #ff8593;
+      box-shadow: 0 0 15px var(--danger-glow);
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 6px;
+      width: auto;
+    }
+
+    /* Tabs Navigation */
+    .tab-nav {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .tab-button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 15px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .tab-button:hover {
+      color: var(--text);
+      background: var(--surface-2);
+    }
+
+    .tab-button.active {
+      color: var(--primary);
+      background: var(--surface-2);
+      box-shadow: inset 0 -2px 0 var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+      flex-grow: 1;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Status led */
+    .led-container {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .led {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .led-online {
+      background: var(--success);
+      box-shadow: 0 0 10px var(--success);
+    }
+
+    .led-offline {
+      background: var(--danger);
+      box-shadow: 0 0 10px var(--danger);
+    }
+
+    .led-auth_failed {
+      background: var(--warning);
+      box-shadow: 0 0 10px var(--warning);
+    }
+
+    .led-discovered {
+      background: var(--discovered);
+      box-shadow: 0 0 10px var(--discovered);
+    }
+
+    /* Table Styles */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface-2);
+      text-align: left;
+    }
+
+    th, td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    th {
+      font-weight: 700;
+      color: var(--text-muted);
+      background: var(--surface-3);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .badge {
+      background: var(--surface-3);
+      color: var(--primary);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* Network Map Container */
+    #networkGraphContainer {
+      width: 100%;
+      height: 480px;
+      background: #090d13;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .network-legend {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      background: rgba(15, 20, 28, 0.85);
+      border: 1px solid var(--border);
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .topology-container {
+      background: #000;
+      height: 380px;
+      border-radius: var(--radius);
+      padding: 20px;
+      overflow-y: auto;
+      font-family: var(--font-code);
+      color: #00ff00;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* Vulnerability check panel */
+    .vuln-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 15px;
+    }
+
+    .vuln-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .severity-pill {
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .severity-CRITICAL { background: #3c0000; color: #ff5252; border: 1px solid #ff5252; }
+    .severity-HIGH { background: #3d1c00; color: #ffa726; border: 1px solid #ffa726; }
+    .severity-MEDIUM { background: #3b3a00; color: #ffee58; border: 1px solid #ffee58; }
+    .severity-LOW { background: #003604; color: #66bb6a; border: 1px solid #66bb6a; }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(7, 10, 14, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 900;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      width: 480px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+      animation: zoomIn 0.3s ease;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .modal-close {
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 18px;
+      transition: var(--transition);
+    }
+
+    .modal-close:hover {
+      color: var(--text);
+    }
+
+    /* Background Jobs Monitor Bar */
+    .progress-overlay {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      background: var(--surface-2);
+      border: 2px solid var(--primary);
+      box-shadow: 0 10px 30px var(--primary-glow);
+      padding: 20px;
+      border-radius: 12px;
+      width: 380px;
+      z-index: 800;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: var(--surface-3);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+      transition: width 0.3s ease;
+    }
+
+    /* Templates / Code Area */
+    .template-box {
+      background: #05080c;
+      border: 1px solid var(--border);
+      color: #61afef;
+      font-family: var(--font-code);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 15px;
+      overflow-x: auto;
+    }
+
+    /* Keyframes Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes zoomIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Overlay Login Glassmorphic / Setup Wizard -->
+  <div id="authOverlay">
+    <div class="login-card">
+      <div style="font-size: 40px; color: var(--primary); margin-bottom: 15px; text-align: center;">
+        <i class="fa-solid fa-shield-halved fa-bounce" id="overlayIcon"></i>
+      </div>
+      
+      <!-- Sezione Registrazione Primo Account -->
+      <div id="wizardSection" style="display: none;">
+        <h2 id="wizTitle" style="text-align: center;">🚀 Primo Accesso rilevato</h2>
+        <p id="wizSubtitle" style="text-align: center;">Benvenuto in Net Manager Alfa. Crea il tuo account Amministratore locale per iniziare a gestire la tua infrastruttura di rete.</p>
+        
+        <div class="form-group" style="text-align: left;">
+          <label>Crea Username Amministratore</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-user"></i>
+            <input id="wizUser" type="text" placeholder="Es. claudio_admin">
+          </div>
+        </div>
+        
+        <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+          <label>Imposta Password Sicura</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock"></i>
+            <input id="wizPass" type="password" placeholder="Minimo 6 caratteri">
+          </div>
+        </div>
+        
+        <button class="btn btn-primary" id="btnRegisterAdmin" style="background: #5ecf8d; color: #000;">
+          <i class="fa-solid fa-user-plus"></i> Completa Configurazione ed Entra
+        </button>
+      </div>
+
+      <!-- Sezione Login Standard -->
+      <div id="loginSection" style="display: none;">
+        <h2 id="overlayTitle" style="text-align: center;">🔒 Controllo Accesso Rete</h2>
+        <p id="overlaySubtitle" style="text-align: center;">Inserisci le tue credenziali cifrate locali per accedere ai pannelli di triage operativo ed automazione.</p>
+        
+        <div class="form-group" style="text-align: left;">
+          <label>Username</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-user"></i>
+            <input id="loginUser" type="text" placeholder="Inserisci username">
+          </div>
+        </div>
+        
+        <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+          <label>Password</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock"></i>
+            <input id="loginPass" type="password" placeholder="Inserisci password">
+          </div>
+        </div>
+        
+        <button class="btn btn-primary" id="btnLogin">
+          <i class="fa-solid fa-right-to-bracket"></i> Autenticati
+        </button>
+      </div>
+      
+      <!-- Div Messaggi di Errore -->
+      <div id="loginError" style="color: var(--danger); font-size: 13px; margin-top: 15px; text-align: center; display: none;">
+        Credenziali non corrette o errore di sistema. Riprova.
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar di Provisioning & Gruppi -->
+  <aside>
+    <div class="aside-header">
+      <h2><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> Net Manager Alfa</h2>
+      <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Core Orchestrator</span>
+    </div>
+    
+    <div class="user-badge">
+      <span><i class="fa-solid fa-user-shield"></i> Amministratore</span>
+      <a href="#" onclick="logout()" style="color: var(--danger); text-decoration: none; font-weight: 700;"><i class="fa-solid fa-power-off"></i> Esci</a>
+    </div>
+
+    <div>
+      <h3 style="margin-bottom: 12px; font-size: 16px;"><i class="fa-solid fa-circle-plus"></i> Provisioning Apparato</h3>
+      
+      <div class="form-group">
+        <label>Assegna a Gruppo/Sede</label>
+        <select id="devGroupSelect"></select>
+      </div>
+      
+      <div class="form-group">
+        <label>IP Apparato</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-server"></i>
+          <input id="devIp" type="text" placeholder="10.0.0.1">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Vendor Engine</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-gears"></i>
+          <select id="devVendor" style="padding-left:36px;">
+            <option value="cisco">Cisco IOS</option>
+            <option value="hpe">HPE ProCurve</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Profilo Credenziali</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-key"></i>
+          <select id="devProfile" style="padding-left:36px;">
+            <option value="default">Profilo Rete Standard</option>
+            <option value="custom">Credenziali dedicate...</option>
+          </select>
+        </div>
+      </div>
+      
+      <div id="customCredsForm" style="display:none; border-left: 2px solid var(--primary); padding-left: 10px; margin-bottom: 10px;">
+        <div class="form-group">
+          <label>Username</label>
+          <input id="devUser" type="text" placeholder="Admin" style="padding-left:12px;">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input id="devPass" type="password" placeholder="admin" style="padding-left:12px;">
+        </div>
+        <div class="form-group">
+          <label>Enable Secret</label>
+          <input id="devSecret" type="password" placeholder="admin" style="padding-left:12px;">
+        </div>
+      </div>
+      
+      <button class="btn btn-primary" id="btnSaveDevice" style="margin-top: 10px;">
+        <i class="fa-solid fa-floppy-disk"></i> Salva Apparato
+      </button>
+    </div>
+    
+    <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: auto;">
+      <h3 style="font-size: 14px; margin-bottom: 10px;"><i class="fa-solid fa-folder-plus"></i> Aggiungi Nuovo Gruppo</h3>
+      <div class="form-group">
+        <label>Nome Gruppo</label>
+        <input id="newGroupName" type="text" placeholder="Es. Sede_Torino" style="padding-left:12px;">
+      </div>
+      <button class="btn btn-primary" id="btnCreateGroup" style="background:#5ecf8d; color:#000;">
+        <i class="fa-solid fa-folder-plus"></i> Crea Gruppo
+      </button>
+    </div>
+  </aside>
+
+  <!-- Area Centrale Principale -->
+  <main>
+    <div class="tab-nav">
+      <button class="tab-button active" onclick="switchTab('tab-devices', this)">
+        <i class="fa-solid fa-list-check"></i> Network Inventory
+      </button>
+      <button class="tab-button" onclick="switchTab('tab-groups', this)">
+        <i class="fa-solid fa-folder-open"></i> Gestione Gruppi/Sedi
+      </button>
+      <button class="tab-button" onclick="switchTab('tab-map', this)">
+        <i class="fa-solid fa-route"></i> CDP/LLDP Adjacency List
+      </button>
+      <button class="tab-button" onclick="switchTab('tab-map-interactive', this)">
+        <i class="fa-solid fa-circle-nodes"></i> Mappa Topologia 2D
+      </button>
+      <button class="tab-button" onclick="switchTab('tab-security', this)">
+        <i class="fa-solid fa-shield-virus"></i> Threat Intel (EUVD)
+      </button>
+      <button class="tab-button" onclick="switchTab('tab-import', this)">
+        <i class="fa-solid fa-file-csv"></i> Importazione CSV
+      </button>
+    </div>
+
+    <!-- TAB 1: Network Inventory (Dispositivi) -->
+    <div id="tab-devices" class="tab-content active">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; gap: 15px; flex-wrap: wrap;">
+        <div style="display:flex; align-items:center; gap: 15px;">
+          <h3>Dispositivi di Rete Sotto Monitoraggio</h3>
+          <select id="filterGroupSelect" onchange="renderDeviceTable()" style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-family: inherit; font-size: 13px; cursor: pointer; outline: none; transition: var(--transition);">
+            <option value="all">Filtra per Sede: Tutte</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-small" id="btnRunTriage" style="background: var(--warning); color: #000; width: auto; margin: 0;">
+          <i class="fa-solid fa-bolt-lightning"></i> Avvia Triage Globale (Background)
+        </button>
+      </div>
+      
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Stato</th>
+              <th>Gruppo</th>
+              <th>Indirizzo IP</th>
+              <th>Vendor</th>
+              <th>Firmware</th>
+              <th>Azioni / Utility</th>
+            </tr>
+          </thead>
+          <tbody id="deviceTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: Gestione Gruppi/Sedi -->
+    <div id="tab-groups" class="tab-content">
+      <h3>Anagrafica Gruppi, Clienti e Sedi Locali</h3>
+      <p style="color: var(--text-muted); font-size: 13px; margin-top: 5px; margin-bottom: 15px;">
+        I gruppi organizzano logicamente la topologia dei tuoi asset. L'eliminazione di un gruppo sposta i dispositivi associati nel gruppo Generale.
+      </p>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome Sede / Cliente</th>
+              <th>Descrizione Metadati</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="groupsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: Mappa Topologica Adjacency List -->
+    <div id="tab-map" class="tab-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; gap: 15px; flex-wrap: wrap;">
+        <div style="display:flex; align-items:center; gap: 15px;">
+          <h3>Mappa Topologica Adjacency List (Deducibile dai Backup)</h3>
+          <select id="topologyGroupSelect" onchange="loadTopology()" style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-family: inherit; font-size: 13px; cursor: pointer; outline: none; transition: var(--transition);">
+            <option value="all">Filtra per Sede: Tutte</option>
+          </select>
+        </div>
+        <button class="btn btn-danger btn-small" onclick="resetTopology()" style="width: auto; margin: 0; background: var(--danger); color: #fff;">
+          <i class="fa-solid fa-trash-can"></i> Reset Topologia
+        </button>
+      </div>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">
+        Il sistema estrae le relazioni di prossimità fisiche analizzando le tabelle dei vicini all'interno delle configurazioni di backup salvate.
+      </p>
+      <div id="topologyView" class="topology-container">> In attesa di elaborazione...</div>
+    </div>
+
+    <!-- TAB 4: Mappa Topologia 2D (Premium Vis.js) -->
+    <div id="tab-map-interactive" class="tab-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; gap: 15px; flex-wrap: wrap;">
+        <div style="display:flex; align-items:center; gap: 15px;">
+          <h3>Topologia Dinamica 2D Interactive</h3>
+          <select id="interactiveGroupSelect" onchange="loadInteractiveMap()" style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-family: inherit; font-size: 13px; cursor: pointer; outline: none; transition: var(--transition);">
+            <option value="all">Filtra per Sede: Tutte</option>
+          </select>
+        </div>
+        <div style="display:flex; gap: 8px;">
+          <button class="btn btn-danger btn-small" onclick="resetTopology()" style="width: auto; margin: 0; background: var(--danger); color: #fff;">
+            <i class="fa-solid fa-trash-can"></i> Reset Topologia
+          </button>
+          <button class="btn btn-secondary btn-small" onclick="loadInteractiveMap()" style="width: auto; margin: 0;">
+            <i class="fa-solid fa-arrows-rotate"></i> Aggiorna Vista
+          </button>
+        </div>
+      </div>
+      
+      <div style="position: relative; flex-grow: 1;">
+        <div id="networkGraphContainer"></div>
+        <div class="network-legend">
+          <div class="legend-item"><span class="led led-online"></span>Dispositivo Online</div>
+          <div class="legend-item"><span class="led led-offline"></span>Dispositivo Offline</div>
+          <div class="legend-item"><span class="led led-auth_failed"></span>Autenticazione Fallita</div>
+          <div class="legend-item"><span class="led led-discovered"></span>Vicino Discoperto (CDP/LLDP)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: Threat Intel (EUVD ENISA) -->
+    <div id="tab-security" class="tab-content">
+      <div style="margin-bottom: 20px;">
+        <h3>Vulnerability Matcher (EUVD ENISA)</h3>
+        <p style="font-size: 14px; color: var(--text-muted); margin-top: 5px;">
+          Controlla in tempo reale le vulnerabilità del firmware rilevate sugli apparati attivi confrontandole con l'European Vulnerability Database (EUVD).
+        </p>
+      </div>
+      
+      <div id="securityTriageContainer" style="display: flex; flex-direction: column; gap: 15px;">
+        <!-- Popolato in dinamico con i match delle vulnerabilità -->
+      </div>
+    </div>
+
+    <!-- TAB 6: Importazione CSV -->
+    <div id="tab-import" class="tab-content">
+      <h3>Importazione Massiva da CSV</h3>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">
+        Il file CSV deve contenere tassativamente l'intestazione specificata di seguito.
+      </p>
+      <div class="template-box">IP,Username,Password,Enable Secret,Hostname,Group,Vendor
+192.168.1.1,admin,Mypass123!,enablepass,SW-Milano-01,Sede_Milano,cisco
+192.168.2.1,manager,Pwd456!,secret,SW-Roma-Core,Sede_Roma,hpe</div>
+      
+      <div class="form-group" style="margin-top: 20px; margin-bottom: 20px;">
+        <label>Seleziona file CSV</label>
+        <input type="file" id="csvFileInput" accept=".csv" style="padding-left: 12px; cursor: pointer;">
+      </div>
+      <button class="btn btn-primary" id="btnUploadCsv">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Elabora e Importa
+      </button>
+    </div>
+  </main>
+
+  <!-- Progress Box dei Job in Background -->
+  <div class="progress-overlay" id="triageProgressBox">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h4 style="color: var(--primary); font-size: 15px;"><i class="fa-solid fa-circle-notch fa-spin"></i> Triage in Corso...</h4>
+      <span id="triageProgressPct" style="font-weight: 700;">0%</span>
+    </div>
+    <div style="font-size: 12px; color: var(--text-muted);" id="triageProgressMsg">Avvio scansione...</div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="triageProgressBarFill"></div>
+    </div>
+  </div>
+
+  <!-- Terminal CLI Modale Rapido -->
+  <div class="modal-overlay" id="cliModalOverlay">
+    <div class="modal" style="width: 800px; max-width: 95%;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-terminal" style="color: var(--primary);"></i> Terminale SSH Interattivo</h3>
+        <i class="fa-solid fa-xmark modal-close" onclick="closeCliModal()"></i>
+      </div>
+      <div style="margin-bottom: 12px; font-size: 14px;">
+        Dispositivo target: <strong id="cliTargetIp">10.0.0.1</strong>
+      </div>
+      
+      <div id="terminal-container" style="background:#070a0e; border-radius: 8px; padding: 10px; height: 400px; border: 1px solid var(--border); overflow: hidden;"></div>
+    </div>
+  </div>
+
+  <script>
+    let globalDevices = [];
+    let globalGroups = {};
+    let globalVersions = {}; // Cache globale per lo stato delle scansioni (ottimizzazione UI)
+    let isTriagePolling = false;
+    let appLoading = false;
+    let wasTriageRunning = false;
+
+    // --- AUTENTICAZIONE E UTILITY ---
+
+    function getAuthHeaders() {
+        const token = sessionStorage.getItem("net_token");
+        return token ? { "Authorization": `Bearer ${token}` } : {};
+    }
+
+    // Funzione centralizzata per iniettare e controllare gli header di autenticazione ed evitare disallineamenti della UI
+    async function apiFetch(url, options = {}) {
+        options.headers = options.headers || {};
+        Object.assign(options.headers, getAuthHeaders());
+        
+        try {
+            const res = await fetch(url, options);
+            if (res.status === 401) {
+                console.warn("[AUTH] Sessione scaduta o non valida (401). Forzatura Logout.");
+                logout();
+                return null;
+            }
+            return res;
+        } catch (err) {
+            console.error(`[ApiFetch Error] ${url}:`, err);
+            return null;
+        }
+    }
+
+    async function checkAuthRequirements() {
+        // Interroga lo stato del setup/utenti nel sistema
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        
+        const overlay = document.getElementById('authOverlay');
+        const token = sessionStorage.getItem("net_token");
+
+        if (!data.has_users) {
+            // Nessun utente su disco: mostriamo la procedura guidata di primo setup
+            document.getElementById('wizardSection').style.display = 'block';
+            document.getElementById('loginSection').style.display = 'none';
+            overlay.style.display = 'flex';
+            return false;
+        } else {
+            // Esiste già un amministratore: mostriamo la maschera di login standard
+            document.getElementById('wizardSection').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'block';
+            if (!token) {
+                overlay.style.display = 'flex';
+                return false;
+            }
+            overlay.style.display = 'none';
+            return true;
+        }
+    }
+
+    // Evento per la registrazione guidata del primo utente amministratore
+    document.getElementById('btnRegisterAdmin').addEventListener('click', async () => {
+        const user = document.getElementById('wizUser').value.trim();
+        const pass = document.getElementById('wizPass').value.trim();
+        
+        if(!user || !pass) { alert("Compila tutti i campi richiesti!"); return; }
+        
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: user, password: pass })
+        });
+        
+        if (res.ok) {
+            alert("Account configurato con successo! Esegui adesso il tuo primo login.");
+            checkAuthRequirements(); // Aggiorna lo stato per passare al form di login
+        } else {
+            const err = await res.json();
+            alert("Errore: " + (err.detail || "Impossibile creare l'account."));
+        }
+    });
+
+    // Evento per il Login Standard
+    document.getElementById('btnLogin').addEventListener('click', async () => {
+        const user = document.getElementById('loginUser').value.trim();
+        const pass = document.getElementById('loginPass').value.trim();
+        const errDiv = document.getElementById('loginError');
+        
+        if(!user || !pass) { errDiv.innerText = "Compila tutti i campi!"; errDiv.style.display = 'block'; return; }
+        errDiv.style.display = 'none';
+        
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: user, password: pass })
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            // Salva il token JWT per autenticare le chiamate API successive
+            if (data.access_token) {
+                sessionStorage.setItem("net_token", data.access_token);
+            }
+            // Sblocca la UI nascondendo la schermata oscurante
+            document.getElementById('authOverlay').style.display = 'none';
+            appInit(); // Avvia il caricamento dei dispositivi di rete
+        } else {
+            errDiv.innerText = "Accesso negato: credenziali errate o utente inesistente.";
+            errDiv.style.display = 'block';
+        }
+    });
+
+    function logout() {
+        sessionStorage.removeItem("net_token");
+        checkAuthRequirements();
+    }
+
+    // --- INITIALIZATION ---
+
+    async function appInit() {
+        appLoading = true;
+        const isAuth = await checkAuthRequirements();
+        if (!isAuth) {
+            appLoading = false;
+            return;
+        }
+        
+        try {
+            const res = await apiFetch('/api/local-devices');
+            if (!res) {
+                appLoading = false;
+                return;
+            }
+            const data = await res.json();
+            
+            globalDevices = data.devices;
+            globalGroups = data.groups;
+            globalVersions = data.detected_versions; // Cache globale delle versioni rilevate
+
+            // Popola tendina Gruppi nel form
+            const groupSelect = document.getElementById('devGroupSelect');
+            groupSelect.innerHTML = '';
+            Object.keys(globalGroups).forEach(g => {
+                groupSelect.innerHTML += `<option value="${g}">${g}</option>`;
+            });
+
+            // Memorizza la selezione corrente del filtro se esiste
+            const filterSelect = document.getElementById('filterGroupSelect');
+            const prevFilter = filterSelect ? filterSelect.value : 'all';
+            
+            // Popola tendina Filtro Gruppi nella tabella dell'inventario
+            if (filterSelect) {
+                filterSelect.innerHTML = '<option value="all">Filtra per Sede: Tutte</option>';
+                Object.keys(globalGroups).forEach(g => {
+                    filterSelect.innerHTML += `<option value="${g}">${g}</option>`;
+                });
+                filterSelect.value = prevFilter;
+            }
+
+            // Popola tendina Filtro Gruppi in TAB 3
+            const topoSelect = document.getElementById('topologyGroupSelect');
+            if (topoSelect) {
+                const prevTopoFilter = topoSelect.value || 'all';
+                topoSelect.innerHTML = '<option value="all">Filtra per Sede: Tutte</option>';
+                Object.keys(globalGroups).forEach(g => {
+                    topoSelect.innerHTML += `<option value="${g}">${g}</option>`;
+                });
+                topoSelect.value = prevTopoFilter;
+            }
+
+            // Popola tendina Filtro Gruppi in TAB 4
+            const interSelect = document.getElementById('interactiveGroupSelect');
+            if (interSelect) {
+                const prevInterFilter = interSelect.value || 'all';
+                interSelect.innerHTML = '<option value="all">Filtra per Sede: Tutte</option>';
+                Object.keys(globalGroups).forEach(g => {
+                    interSelect.innerHTML += `<option value="${g}">${g}</option>`;
+                });
+                interSelect.value = prevInterFilter;
+            }
+
+            // Popola Tabella Dispositivi tramite la nuova funzione autonoma filtrabile
+            renderDeviceTable();
+
+            // Popola Tabella Gestione Gruppi
+            const groupBody = document.getElementById('groupsTableBody');
+            groupBody.innerHTML = '';
+            Object.keys(globalGroups).forEach(g => {
+                const desc = globalGroups[g].description || "Sede Logica";
+                groupBody.innerHTML += `<tr>
+                    <td><strong>${g}</strong></td>
+                    <td><span style="color:var(--text-muted); font-size:13px;">${desc}</span></td>
+                    <td>${g !== 'Generale' ? `<button onclick="deleteGroup('${g}')" style="color:var(--danger); background:none; border:none; cursor:pointer;"><i class="fa-solid fa-trash-can"></i> Elimina Sede</button>` : 'System Reserved'}</td>
+                </tr>`;
+            });
+
+            // Forza il reload delle mappe se le tab sono attive
+            const activeTabId = document.querySelector('.tab-content.active')?.id;
+            if (activeTabId === 'tab-map') {
+                await loadTopology();
+            } else if (activeTabId === 'tab-map-interactive') {
+                await loadInteractiveMap();
+            } else if (activeTabId === 'tab-security') {
+                loadThreatIntel();
+            }
+            
+            startTriageStatusPolling();
+
+        } catch (err) {
+            console.error(err);
+        } finally {
+            appLoading = false;
+        }
+    }
+
+    function renderDeviceTable() {
+        const filterSelect = document.getElementById('filterGroupSelect');
+        const selectedGroup = filterSelect ? filterSelect.value : 'all';
+        
+        const devBody = document.getElementById('deviceTableBody');
+        if (!devBody) return;
+        
+        devBody.innerHTML = '';
+        globalDevices.forEach(d => {
+            if (selectedGroup !== 'all' && d.Group !== selectedGroup) {
+                return;
+            }
+            const scan = globalVersions[d.IP] || { version: "Non Scansionato", status: "unknown" };
+            let ledClass = "led-offline";
+            if (scan.status === "online") ledClass = "led-online";
+            else if (scan.status === "auth_failed") ledClass = "led-auth_failed";
+
+            devBody.innerHTML += `<tr>
+                <td>
+                  <span class="led-container">
+                    <span class="led ${ledClass}"></span>
+                    ${scan.status.toUpperCase()}
+                  </span>
+                </td>
+                <td><span class="badge">${d.Group}</span></td>
+                <td><strong>${d.IP}</strong></td>
+                <td>${d.Vendor.toUpperCase()}</td>
+                <td><code>${scan.version}</code></td>
+                <td class="actions-cell">
+                    <button class="btn btn-secondary btn-small" style="margin:0; padding: 4px 8px;" onclick="openCliModal('${d.IP}')"><i class="fa-solid fa-terminal"></i> CLI</button>
+                    <button class="btn btn-primary btn-small" style="margin:0; width:auto; background:#3be188; color:#000; padding: 4px 8px;" onclick="downloadBackup('${d.IP}')"><i class="fa-solid fa-download"></i></button>
+                    <button class="btn btn-danger btn-small" style="margin:0; padding: 4px 8px; background:none; border:none; color:var(--danger); cursor:pointer;" onclick="deleteDevice('${d.IP}')"><i class="fa-solid fa-trash-can"></i> Elimina</button>
+                </td>
+            </tr>`;
+        });
+    }
+
+    // --- DEVICE CRUD ---
+
+    document.getElementById('devProfile').addEventListener('change', (e) => {
+        document.getElementById('customCredsForm').style.display = e.target.value === 'custom' ? 'block' : 'none';
+    });
+
+    document.getElementById('btnSaveDevice').addEventListener('click', async () => {
+        const payload = {
+            ip: document.getElementById('devIp').value.trim(),
+            vendor: document.getElementById('devVendor').value,
+            profile: document.getElementById('devProfile').value,
+            username: document.getElementById('devUser').value,
+            password: document.getElementById('devPass').value,
+            enable_secret: document.getElementById('devSecret').value,
+            group: document.getElementById('devGroupSelect').value
+        };
+
+        if(!payload.ip) { alert("Inserisci l'IP del dispositivo."); return; }
+
+        const res = await apiFetch('/api/add-device', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(payload) 
+        });
+        if(res && res.ok) {
+            document.getElementById('devIp').value = '';
+            document.getElementById('devProfile').value = 'default';
+            document.getElementById('customCredsForm').style.display = 'none';
+            appInit();
+        } else if (res) {
+            const err = await res.json();
+            alert(`Errore: ${err.detail || "Impossibile salvare il dispositivo"}`);
+        }
+    });
+
+    async function deleteDevice(ip) {
+        if(confirm(`Sicuro di voler rimuovere il dispositivo ${ip}?`)) {
+            const res = await apiFetch('/api/delete-device', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ ip: ip }) 
+            });
+            if (res && res.ok) {
+                appInit();
+            }
+        }
+    }
+
+    // --- GRUPPI CRUD ---
+
+    document.getElementById('btnCreateGroup').addEventListener('click', async () => {
+        const name = document.getElementById('newGroupName').value.trim();
+        if(!name) return;
+        
+        const res = await apiFetch('/api/groups', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({ name: name, description: `Sede secondaria ${name}` }) 
+        });
+        if(res && res.ok) {
+            document.getElementById('newGroupName').value = '';
+            appInit();
+        } else if (res) {
+            alert("Errore durante la creazione del gruppo.");
+        }
+    });
+
+    async function deleteGroup(name) {
+        if(confirm(`Eliminare la sede ${name}? Tutti i dispositivi associati passeranno al gruppo Generale.`)) {
+            const res = await apiFetch('/api/groups/delete', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ name: name }) 
+            });
+            if(res && res.ok) {
+                appInit();
+            } else if (res) {
+                alert("Impossibile eliminare il gruppo.");
+            }
+        }
+    }
+
+    // --- TABS & TOPOLOGY LIST VIEW ---
+
+    function switchTab(tabId, clickedBtn) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        if (clickedBtn) {
+            clickedBtn.classList.add('active');
+        }
+        
+        if (tabId === 'tab-devices') {
+            renderDeviceTable();
+        } else if(tabId === 'tab-map') loadTopology();
+        else if(tabId === 'tab-map-interactive') loadInteractiveMap();
+        else if(tabId === 'tab-security' && !appLoading) {
+            loadThreatIntel();
+        }
+    }
+
+    async function loadTopology() {
+        const view = document.getElementById('topologyView');
+        view.innerHTML = "> Analisi euristica dei vicini CDP/LLDP in corso...\n";
+        
+        const groupSelect = document.getElementById('topologyGroupSelect');
+        const selectedGroup = groupSelect ? groupSelect.value : 'all';
+        
+        try {
+            const res = await apiFetch('/api/topology?group=' + encodeURIComponent(selectedGroup));
+            if (!res) return;
+            const data = await res.json();
+            
+            if(!data.links || data.links.length === 0) {
+                view.innerHTML = "> Nessun collegamento fisicamente individuato.\nAssicurati che i backup configurazione contengano tabelle dei vicini LLDP/CDP.";
+                return;
+            }
+            
+            view.innerHTML = "=== COLLEGAMENTI INFRASTRUTTURA FISICA RILEVATI ===\n\n";
+            data.links.forEach(l => {
+                view.innerHTML += `[Nodo: ${l.source}] <-------- INTERCONNESSIONE CDP/LLDP --------> [Nodo: ${l.target}]\n`;
+            });
+        } catch(e) {
+            view.innerHTML = `> Errore durante il caricamento della topologia: ${e}`;
+        }
+    }
+
+    // --- VIS.JS TOPOLOGY GRAPH VIEW ---
+
+    let networkInstance = null;
+
+    async function loadInteractiveMap() {
+        const groupSelect = document.getElementById('interactiveGroupSelect');
+        const selectedGroup = groupSelect ? groupSelect.value : 'all';
+        
+        const res = await apiFetch("/api/network-map?group=" + encodeURIComponent(selectedGroup));
+        if (!res || !res.ok) return;
+        const data = await res.json();
+
+        // Trasforma nodi per Vis.js
+        const nodes = data.nodes.map(n => {
+            let iconColor = "#8d9bb0";
+            let shadowColor = "rgba(0,0,0,0)";
+
+            if (n.status === "online") {
+                iconColor = "#3be188";
+                shadowColor = "rgba(59, 225, 136, 0.4)";
+            } else if (n.status === "offline") {
+                iconColor = "#ff6b7c";
+                shadowColor = "rgba(255, 107, 124, 0.4)";
+            } else if (n.status === "auth_failed") {
+                iconColor = "#ffb84d";
+                shadowColor = "rgba(255, 184, 77, 0.4)";
+            } else if (n.status === "discovered") {
+                iconColor = "#a3a3a3";
+                shadowColor = "rgba(163, 163, 163, 0.2)";
+            }
+
+            // Nodi di confine (appartengono ad altri gruppi ma connessi al gruppo filtrato)
+            if (n.is_boundary) {
+                iconColor = "#4a5568";
+                shadowColor = "transparent";
+            }
+
+            let iconCode = "\uf6ff"; // default switch
+            if (n.device_type === 'router') {
+                iconCode = "\uf4d7";
+            } else if (n.device_type === 'ap') {
+                iconCode = "\uf1eb";
+            }
+
+            return {
+                id: n.id,
+                label: `${n.label}\n(${n.id})`,
+                font: { color: "#f0f4f9", face: "Satoshi", size: 12, bold: true },
+                shape: "icon",
+                icon: {
+                    face: "'Font Awesome 6 Free'",
+                    weight: "900",
+                    code: iconCode,
+                    color: iconColor,
+                    size: 40
+                },
+                shadow: {
+                    enabled: true,
+                    color: shadowColor,
+                    size: 8,
+                    x: 0,
+                    y: 0
+                }
+            };
+        });
+
+        // Trasforma archi per Vis.js
+        const edges = data.links.map(l => {
+            return {
+                from: l.source,
+                to: l.target,
+                label: l.local_port && l.local_port !== 'Vicino' ? `L: ${l.local_port} -> R: ${l.remote_port}` : 'Link',
+                font: { color: "#8d9bb0", size: 10, face: "JetBrains Mono", strokeWidth: 0 },
+                color: { color: "rgba(44, 188, 195, 0.4)", highlight: "#2cbcc3" },
+                arrows: { to: { enabled: false } },
+                width: 2
+            };
+        });
+
+        const container = document.getElementById("networkGraphContainer");
+        const graphData = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+        const options = {
+            physics: {
+                barnesHut: { gravitationalConstant: -3000, centralGravity: 0.3, springLength: 150 }
+            },
+            interaction: { hover: true }
+        };
+
+        if (networkInstance) {
+            networkInstance.destroy();
+        }
+        networkInstance = new vis.Network(container, graphData, options);
+    }
+
+    async function resetTopology() {
+        if (!confirm("Sei sicuro? Questa azione eliminerà tutti i backup e azzererà la mappa di rete.")) return;
+
+        const res = await apiFetch('/api/topology/reset', { method: 'POST' });
+        if (!res || !res.ok) {
+            alert("Errore durante il reset della topologia.");
+            return;
+        }
+
+        // 1. Distruggi istanza vis.js e pulisci il container
+        if (networkInstance) {
+            networkInstance.destroy();
+            networkInstance = null;
+        }
+        const graphContainer = document.getElementById('networkGraphContainer');
+        if (graphContainer) graphContainer.innerHTML = '';
+
+        // 2. Pulisci la vista adjacency list
+        const topoView = document.getElementById('topologyView');
+        if (topoView) {
+            topoView.innerHTML = '> Topologia resettata. Avvia un Triage per ricostruire la mappa di rete.';
+        }
+
+        // 3. Ricarica inventario (aggiorna stati LED nella tabella)
+        await appInit();
+
+        // 4. Forza reload di ENTRAMBE le mappe indipendentemente dalla tab attiva
+        await loadTopology();
+        await loadInteractiveMap();
+
+        const data = await res.json();
+        console.info(`[Reset] Eliminati ${data.deleted} file cache.`);
+    }
+
+    // --- TERMINAL CLI INTERACTIVE (WebSockets + Xterm.js) ---
+
+    let termInstance = null;
+    let wsSocket = null;
+
+    function openCliModal(ip) {
+        document.getElementById("cliTargetIp").innerText = ip;
+        document.getElementById("cliModalOverlay").style.display = "flex";
+
+        const container = document.getElementById("terminal-container");
+        container.innerHTML = ""; // Pulisce precedenti terminali rimasti
+
+        // Inizializza Xterm.js
+        termInstance = new Terminal({
+            cursorBlink: true,
+            theme: {
+                background: '#070a0e',
+                foreground: '#f0f4f9',
+                cursor: '#2cbcc3',
+                selection: 'rgba(44, 188, 195, 0.3)'
+            },
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 14,
+            rows: 24,
+            cols: 80
+        });
+
+        termInstance.open(container);
+        termInstance.write("Inizializzazione sessione terminale...\r\n");
+
+        const token = sessionStorage.getItem("net_token") || "";
+        // Rileva host e protocollo per la WebSocket (ws o wss a seconda di http o https)
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const wsUrl = `${protocol}//${window.location.host}/api/ws-terminal/${ip}?token=${encodeURIComponent(token)}`;
+
+        wsSocket = new WebSocket(wsUrl);
+
+        wsSocket.onopen = () => {
+            termInstance.write("[Connessione WebSocket stabilita]\r\n");
+        };
+
+        wsSocket.onmessage = (event) => {
+            termInstance.write(event.data);
+        };
+
+        wsSocket.onclose = (event) => {
+            termInstance.write(`\r\n[Connessione terminale chiusa: ${event.reason || "Nessun motivo fornito"}]\r\n`);
+        };
+
+        wsSocket.onerror = (err) => {
+            termInstance.write(`\r\n[Errore WebSocket] Connessione interrotta.\r\n`);
+        };
+
+        // Invia l'input digitato sul terminale al WebSocket
+        termInstance.onData((data) => {
+            if (wsSocket && wsSocket.readyState === WebSocket.OPEN) {
+                wsSocket.send(data);
+            }
+        });
+    }
+
+    function closeCliModal() {
+        document.getElementById("cliModalOverlay").style.display = "none";
+
+        // Rilascio pulito delle risorse per evitare memory leak e connessioni orfane
+        if (wsSocket) {
+            try {
+                wsSocket.close();
+            } catch (e) {
+                console.error("Errore durante la chiusura del WebSocket:", e);
+            }
+            wsSocket = null;
+        }
+
+        if (termInstance) {
+            try {
+                termInstance.dispose();
+            } catch (e) {
+                console.error("Errore durante il dispose di Xterm.js:", e);
+            }
+            termInstance = null;
+        }
+    }
+
+    // --- BACKGROUND JOBS (polling triage in background) ---
+
+    document.getElementById("btnRunTriage").addEventListener("click", async () => {
+        const res = await apiFetch("/api/run-triage", { method: "POST" });
+        if (res && res.ok) {
+            startTriageStatusPolling();
+        }
+    });
+
+    function startTriageStatusPolling() {
+        if (isTriagePolling) return;
+        isTriagePolling = true;
+        pollTriageStatus();
+    }
+
+    async function pollTriageStatus() {
+        try {
+            const res = await apiFetch("/api/triage-status");
+            if (!res || !res.ok) { isTriagePolling = false; return; }
+            const statusData = await res.json();
+            
+            const pbox = document.getElementById("triageProgressBox");
+            if (statusData.status === "running") {
+                wasTriageRunning = true;
+                pbox.style.display = "flex";
+                const total = statusData.total || 1;
+                const progress = statusData.progress || 0;
+                const pct = Math.round((progress / total) * 100);
+                
+                document.getElementById("triageProgressPct").innerText = `${pct}%`;
+                document.getElementById("triageProgressMsg").innerText = `Elaborazione: ${statusData.current_device} (${progress}/${total})`;
+                document.getElementById("triageProgressBarFill").style.width = `${pct}%`;
+                
+                setTimeout(pollTriageStatus, 1500);
+            } else {
+                pbox.style.display = "none";
+                isTriagePolling = false;
+                if (wasTriageRunning) {
+                    wasTriageRunning = false;
+                    appInit();
+                }
+            }
+        } catch {
+            isTriagePolling = false;
+        }
+    }
+
+    // --- VULNERABILITY ADVISORY (EUVD) ---
+
+    // Parallelizzazione delle query ENISA tramite Promise.all (Ottimizzazione Performance)
+    async function loadThreatIntel() {
+        const container = document.getElementById("securityTriageContainer");
+        if (!container) return;
+
+        container.innerHTML = `<div style="text-align:center; padding: 40px; color:var(--text-muted);"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><br><br>Interrogando database ENISA EUVD in parallelo...</div>`;
+
+        const res = await apiFetch('/api/local-devices');
+        if (!res) return;
+        const data = await res.json();
+        
+        const onlineDevices = data.devices.filter(d => {
+            const scan = data.detected_versions[d.IP];
+            return scan && scan.status === 'online' && scan.version !== 'Non Scansionato' && scan.version !== 'Unknown';
+        });
+
+        if (onlineDevices.length === 0) {
+            container.innerHTML = `<div style="padding: 20px; border: 1px solid var(--border); border-radius:8px; text-align:center; color: var(--text-muted);">
+                Nessun apparato online con firmware rilevato. Esegui prima un <strong>Triage Globale</strong>.
+            </div>`;
+            return;
+        }
+
+        container.innerHTML = "";
+
+        // Popola inizialmente tutti i widget con caricamento
+        const promises = onlineDevices.map(async (d) => {
+            const scan = data.detected_versions[d.IP];
+            const safeIpId = d.IP.replace(/\./g, '-');
+            
+            const devCard = document.createElement("div");
+            devCard.className = "vuln-card";
+            devCard.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div>
+                        <span style="font-size:18px; font-weight:700;"><i class="fa-solid fa-server" style="color:var(--primary);"></i> ${d.IP}</span>
+                        <span class="badge" style="margin-left: 10px;">${d.Vendor.toUpperCase()}</span>
+                        <span style="color:var(--text-muted); margin-left: 10px; font-size:13px;">Firmware: <code>${scan.version}</code></span>
+                    </div>
+                    <div id="status-${safeIpId}" style="font-size:13px; font-weight:700; color: var(--text-muted);">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i> Scansione in corso...
+                    </div>
+                </div>
+                <div id="results-${safeIpId}" style="display:flex; flex-direction:column; gap:10px;"></div>
+            `;
+            container.appendChild(devCard);
+
+            const queryUrl = `/api/search?vendor=${encodeURIComponent(d.Vendor)}&text=${encodeURIComponent(scan.version)}&size=3`;
+            
+            try {
+                const deviceRes = await apiFetch(queryUrl);
+                const statusLabel = document.getElementById(`status-${safeIpId}`);
+                const resultsContainer = document.getElementById(`results-${safeIpId}`);
+
+                if (deviceRes && deviceRes.ok) {
+                    const vulnData = await deviceRes.json();
+                    const items = vulnData.results || vulnData.content || vulnData || [];
+
+                    if (items.length > 0) {
+                        statusLabel.innerHTML = `<span style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> ${items.length} Vulnerabilità Rilevate</span>`;
+                        resultsContainer.innerHTML = "";
+                        items.slice(0, 3).forEach(v => {
+                            const enisaId = v.enisaId || v.id || "EUVD-Unknown";
+                            const cveId = v.cveId || v.cve || "N/A";
+                            const description = v.description || v.summary || "Descrizione non disponibile.";
+                            const score = v.cvssScore || v.score || "N/A";
+                            
+                            let severity = "MEDIUM";
+                            if (score !== "N/A") {
+                                const num = parseFloat(score);
+                                if (num >= 9.0) severity = "CRITICAL";
+                                else if (num >= 7.0) severity = "HIGH";
+                                else if (num >= 4.0) severity = "MEDIUM";
+                                else severity = "LOW";
+                            }
+
+                            resultsContainer.innerHTML += `
+                                <div style="background:var(--surface-3); border: 1px solid var(--border); padding: 12px; border-radius: 6px; font-size:13px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+                                        <div>
+                                            <strong style="color:var(--primary);">${enisaId}</strong> 
+                                            <span style="color:var(--text-muted); margin-left:8px;">(CVE: ${cveId})</span>
+                                        </div>
+                                        <span class="severity-pill severity-${severity}">CVSS: ${score}</span>
+                                    </div>
+                                    <div style="color:var(--text-muted); margin-bottom:6px; line-height:1.4;">${description}</div>
+                                    <div style="font-size:10px; color:var(--primary);"><i class="fa-solid fa-scale-balanced"></i> Rilevante per NIS2</div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        statusLabel.innerHTML = `<span style="color: var(--success);"><i class="fa-solid fa-circle-check"></i> Release Sicura</span>`;
+                        resultsContainer.innerHTML = `<div style="color:var(--text-muted); font-size:13px; font-style:italic;">Nessuna minaccia nota trovata nel database europeo ENISA EUVD per questa release.</div>`;
+                    }
+                } else {
+                    if (statusLabel) {
+                        statusLabel.innerHTML = `<span style="color: var(--warning);"><i class="fa-solid fa-triangle-exclamation"></i> Errore match</span>`;
+                    }
+                }
+            } catch (err) {
+                const statusLabel = document.getElementById(`status-${safeIpId}`);
+                if (statusLabel) {
+                    statusLabel.innerHTML = `<span style="color: var(--danger);">Errore scansione</span>`;
+                }
+            }
+        });
+
+        await Promise.all(promises);
+    }
+
+    async function downloadBackup(ip) {
+        try {
+            const res = await apiFetch(`/api/download-backup/${ip}`);
+            if (!res || !res.ok) {
+                alert("Errore durante il download del backup o sessione scaduta.");
+                return;
+            }
+            const blob = await res.blob();
+            const disposition = res.headers.get('content-disposition');
+            let filename = `${ip}.txt`;
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) { 
+                    filename = matches[1].replace(/['"]/g, '');
+                }
+            }
+            
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            alert("Errore di rete durante il download.");
+        }
+    }
+
+    // --- CSV UPLOAD ---
+
+    document.getElementById('btnUploadCsv').addEventListener('click', async () => {
+        const fileInput = document.getElementById('csvFileInput');
+        if (fileInput.files.length === 0) { alert("Seleziona un file CSV."); return; }
+        
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const text = e.target.result;
+            try {
+                const res = await apiFetch('/api/import-csv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ csv_data: text })
+                });
+                if(res && res.ok) {
+                    const result = await res.json();
+                    const importedCount = result.imported ? result.imported.length : 0;
+                    const failedCount = result.failed ? result.failed.length : 0;
+                    
+                    let msg = `Importazione completata!\nDispositivi importati con successo: ${importedCount}`;
+                    if (failedCount > 0) {
+                        msg += `\n\nRighe fallite: ${failedCount}\n\nDettaglio errori:\n`;
+                        result.failed.forEach(f => {
+                            msg += `- Riga ${f.row} (${f.ip}): ${f.error}\n`;
+                        });
+                    }
+                    alert(msg);
+                    fileInput.value = "";
+                    appInit();
+                    switchTab('tab-devices');
+                } else if (res) {
+                    alert("Errore durante l'importazione del file CSV.");
+                }
+            } catch (err) {
+                alert(`Errore: ${err}`);
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    window.onload = () => {
+        appInit();
+    };
+  </script>
+</body>
+</html>

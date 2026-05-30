@@ -1,0 +1,542 @@
+2026-05-25 08:56:21,937 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 08:57:42,116 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 08:57:48,080 - [AUDIT] - Gruppo 'test' (descrizione: 'Sede secondaria test') creato dall'utente 'admin'.
+2026-05-25 09:01:44,401 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 09:18:00,033 - [AUDIT] - Nuovo utente amministratore 'admin' registrato con successo via Setup Wizard.
+2026-05-25 09:18:07,389 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 09:18:27,062 - [AUDIT] - Gruppo 'test1' (descrizione: 'Sede secondaria test1') creato dall'utente 'admin'.
+2026-05-25 09:24:09,950 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 09:39:06,878 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 09:41:50,032 - [AUDIT] - Gruppo 'test1' eliminato dall'utente 'admin'. Tutti i relativi apparati sono riassegnati a 'Generale'.
+2026-05-25 09:41:53,349 - [AUDIT] - Gruppo 'test' eliminato dall'utente 'admin'. Tutti i relativi apparati sono riassegnati a 'Generale'.
+2026-05-25 09:41:55,755 - [AUDIT] - Gruppo 'Sede_Roma' eliminato dall'utente 'admin'. Tutti i relativi apparati sono riassegnati a 'Generale'.
+2026-05-25 09:54:30,047 - [AUDIT] - Dispositivo '10.0.0.2' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 09:54:35,486 - [AUDIT] - Gruppo 'test' (descrizione: 'Sede secondaria test') creato dall'utente 'admin'.
+2026-05-25 10:06:41,367 - [AUDIT] - Dispositivo '192.168.244.9' (vendor: 'cisco', gruppo: 'Generale') aggiunto/aggiornato dall'utente 'admin'.
+2026-05-25 10:07:19,066 - [AUDIT] - Comando CLI 'sh ver' richiesto su dispositivo '192.168.244.9' dall'utente 'admin'.
+2026-05-25 10:07:21,758 - [AUDIT] - Esecuzione comando CLI 'sh ver' fallita sul dispositivo '192.168.244.9': Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.9:22
+
+
+Authentication failed.
+2026-05-25 10:07:43,868 - [AUDIT] - Comando CLI 'sh ver' richiesto su dispositivo '192.168.244.9' dall'utente 'admin'.
+2026-05-25 10:07:46,575 - [AUDIT] - Esecuzione comando CLI 'sh ver' fallita sul dispositivo '192.168.244.9': Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.9:22
+
+
+Authentication failed.
+2026-05-25 10:08:06,224 - [AUDIT] - Triage globale in background avviato dall'utente 'admin'.
+2026-05-25 10:08:08,925 - [AUDIT] - Triage fallito per dispositivo '192.168.244.9': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.9:22
+
+
+Authentication failed.).
+2026-05-25 10:09:08,218 - [AUDIT] - Dispositivo '192.168.244.16' (vendor: 'cisco', gruppo: 'Generale') aggiunto/aggiornato dall'utente 'admin'.
+2026-05-25 10:09:15,448 - [AUDIT] - Comando CLI 'sh run' richiesto su dispositivo '192.168.244.16' dall'utente 'admin'.
+2026-05-25 10:09:18,308 - [AUDIT] - Esecuzione comando CLI 'sh run' fallita sul dispositivo '192.168.244.16': Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.16:22
+
+
+Authentication failed.
+2026-05-25 10:09:28,574 - [AUDIT] - Download del file di backup '192.168.244.16' richiesto dall'utente 'admin'.
+2026-05-25 10:09:31,851 - [AUDIT] - Triage globale in background avviato dall'utente 'admin'.
+2026-05-25 10:09:34,562 - [AUDIT] - Triage fallito per dispositivo '192.168.244.9': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.9:22
+
+
+Authentication failed.).
+2026-05-25 10:09:34,708 - [AUDIT] - Triage fallito per dispositivo '192.168.244.16': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.16:22
+
+
+Authentication failed.).
+2026-05-25 10:23:32,306 - [AUDIT] - Triage globale in background avviato dall'utente 'admin'.
+2026-05-25 10:23:35,081 - [AUDIT] - Triage fallito per dispositivo '192.168.244.9': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.9:22
+
+
+Authentication failed.).
+2026-05-25 10:23:35,193 - [AUDIT] - Triage fallito per dispositivo '192.168.244.16': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.16:22
+
+
+Authentication failed.).
+2026-05-25 10:27:07,696 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 10:27:29,998 - [AUDIT] - Triage globale in background avviato dall'utente 'admin'.
+2026-05-25 10:27:32,718 - [AUDIT] - Triage fallito per dispositivo '192.168.244.9': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.9:22
+
+
+Authentication failed.).
+2026-05-25 10:27:32,896 - [AUDIT] - Triage fallito per dispositivo '192.168.244.16': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.16:22
+
+
+Authentication failed.).
+2026-05-25 10:29:39,882 - [AUDIT] - Dispositivo '192.168.244.9' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 10:30:13,338 - [AUDIT] - Dispositivo '192.168.244.16' (vendor: 'cisco', gruppo: 'Generale') aggiunto/aggiornato dall'utente 'admin'.
+2026-05-25 10:31:14,928 - [AUDIT] - Dispositivo '192.168.244.16' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 10:31:20,668 - [AUDIT] - Dispositivo '192.168.244.16' (vendor: 'cisco', gruppo: 'Generale') aggiunto/aggiornato dall'utente 'admin'.
+2026-05-25 10:32:46,779 - [AUDIT] - Dispositivo '192.168.244.16' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 10:32:51,243 - [AUDIT] - Gruppo 'test' eliminato dall'utente 'admin'. Tutti i relativi apparati sono riassegnati a 'Generale'.
+2026-05-25 10:38:34,453 - [AUDIT] - Gruppo 'test1' (descrizione: 'Sede secondaria test1') creato dall'utente 'admin'.
+2026-05-25 10:38:36,637 - [AUDIT] - Dispositivo '192.168.244.9' (vendor: 'cisco', gruppo: 'test1') aggiunto/aggiornato dall'utente 'admin'.
+2026-05-25 10:39:17,500 - [AUDIT] - Dispositivo '192.168.244.9' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 10:39:39,006 - [AUDIT] - Dispositivo '192.168.244.9' (vendor: 'cisco', gruppo: 'Generale') aggiunto/aggiornato dall'utente 'admin'.
+2026-05-25 10:40:24,029 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 10:44:19,812 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 10:47:24,326 - [AUDIT] - Triage globale in background avviato dall'utente 'admin'.
+2026-05-25 10:47:26,596 - [AUDIT] - Triage e backup completati con successo per dispositivo '192.168.244.9' (Firmware: '15.2(4)E7').
+2026-05-25 11:56:56,208 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 11:57:00,393 - [AUDIT] - Importazione massiva completata: 37 apparati importati da CSV dall'utente 'admin'.
+2026-05-25 11:57:18,857 - [AUDIT] - Triage globale in background avviato dall'utente 'admin'.
+2026-05-25 11:57:20,905 - [AUDIT] - Triage fallito per dispositivo '192.168.244.148': non raggiungibile sulla porta 22 (SSH).
+2026-05-25 11:57:20,906 - [AUDIT] - Triage fallito per dispositivo '192.168.244.244': non raggiungibile sulla porta 22 (SSH).
+2026-05-25 11:57:20,907 - [AUDIT] - Triage fallito per dispositivo '192.168.244.12': non raggiungibile sulla porta 22 (SSH).
+2026-05-25 11:57:21,603 - [AUDIT] - Triage fallito per dispositivo '192.168.244.252': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.252:22
+
+
+Authentication failed.).
+2026-05-25 11:57:21,611 - [AUDIT] - Triage fallito per dispositivo '192.168.244.253': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.253:22
+
+
+Authentication failed.).
+2026-05-25 11:57:21,611 - [AUDIT] - Triage fallito per dispositivo '192.168.244.243': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.243:22
+
+
+Authentication failed.).
+2026-05-25 11:57:21,920 - [AUDIT] - Triage fallito per dispositivo '10.10.254.242': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.242:22
+
+
+Authentication failed.).
+2026-05-25 11:57:21,947 - [AUDIT] - Triage fallito per dispositivo '192.168.244.17': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.17:22
+
+
+Authentication failed.).
+2026-05-25 11:57:23,625 - [AUDIT] - Triage fallito per dispositivo '192.168.244.14': non raggiungibile sulla porta 22 (SSH).
+2026-05-25 11:57:23,818 - [AUDIT] - Triage fallito per dispositivo '192.168.244.9': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.9:22
+
+
+Authentication failed.).
+2026-05-25 11:57:23,933 - [AUDIT] - Triage fallito per dispositivo '192.168.244.240': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.240:22
+
+
+Authentication failed.).
+2026-05-25 11:57:24,210 - [AUDIT] - Triage fallito per dispositivo '192.168.244.15': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.15:22
+
+
+Authentication failed.).
+2026-05-25 11:57:24,654 - [AUDIT] - Triage fallito per dispositivo '10.10.254.247': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.247:22
+
+
+Authentication failed.).
+2026-05-25 11:57:24,873 - [AUDIT] - Triage fallito per dispositivo '192.168.244.20': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.20:22
+
+
+Authentication failed.).
+2026-05-25 11:57:24,963 - [AUDIT] - Triage fallito per dispositivo '10.10.254.248': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.248:22
+
+
+Authentication failed.).
+2026-05-25 11:57:24,985 - [AUDIT] - Triage fallito per dispositivo '10.10.254.240': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.240:22
+
+
+Authentication failed.).
+2026-05-25 11:57:25,064 - [AUDIT] - Triage fallito per dispositivo '10.10.254.251': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.251:22
+
+
+Authentication failed.).
+2026-05-25 11:57:25,453 - [AUDIT] - Triage fallito per dispositivo '10.10.254.246': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.246:22
+
+
+Authentication failed.).
+2026-05-25 11:57:26,096 - [AUDIT] - Triage fallito per dispositivo '10.10.254.249': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.249:22
+
+
+Authentication failed.).
+2026-05-25 11:57:26,710 - [AUDIT] - Triage fallito per dispositivo '192.168.244.245': non raggiungibile sulla porta 22 (SSH).
+2026-05-25 11:57:26,751 - [AUDIT] - Triage fallito per dispositivo '10.10.254.250': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.250:22
+
+
+Authentication failed.).
+2026-05-25 11:57:26,940 - [AUDIT] - Triage fallito per dispositivo '192.168.244.13': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.13:22
+
+
+Authentication failed.).
+2026-05-25 11:57:27,182 - [AUDIT] - Triage fallito per dispositivo '10.10.254.239': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.239:22
+
+
+Authentication failed.).
+2026-05-25 11:57:27,654 - [AUDIT] - Triage fallito per dispositivo '192.168.244.18': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.18:22
+
+
+Authentication failed.).
+2026-05-25 11:57:27,739 - [AUDIT] - Triage fallito per dispositivo '10.10.254.245': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.245:22
+
+
+Authentication failed.).
+2026-05-25 11:57:27,874 - [AUDIT] - Triage fallito per dispositivo '192.168.244.19': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.19:22
+
+
+Authentication failed.).
+2026-05-25 11:57:28,130 - [AUDIT] - Triage fallito per dispositivo '10.10.254.244': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.244:22
+
+
+Authentication failed.).
+2026-05-25 11:57:28,273 - [AUDIT] - Triage fallito per dispositivo '10.10.254.243': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.243:22
+
+
+Authentication failed.).
+2026-05-25 11:57:28,993 - [AUDIT] - Triage fallito per dispositivo '192.168.244.16': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.16:22
+
+
+Authentication failed.).
+2026-05-25 11:57:29,483 - [AUDIT] - Triage fallito per dispositivo '192.168.244.25': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.25:22
+
+
+Authentication failed.).
+2026-05-25 11:57:29,717 - [AUDIT] - Triage fallito per dispositivo '10.10.254.236': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.236:22
+
+
+Authentication failed.).
+2026-05-25 11:57:29,841 - [AUDIT] - Triage fallito per dispositivo '10.10.254.237': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.237:22
+
+
+Authentication failed.).
+2026-05-25 11:57:29,917 - [AUDIT] - Triage fallito per dispositivo '192.168.244.241': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.241:22
+
+
+Authentication failed.).
+2026-05-25 11:57:30,568 - [AUDIT] - Triage fallito per dispositivo '10.10.254.252': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 10.10.254.252:22
+
+
+Authentication failed.).
+2026-05-25 11:57:30,650 - [AUDIT] - Triage fallito per dispositivo '192.168.244.146': errore di connessione/autenticazione (Authentication to device failed.
+
+Common causes of this problem are:
+1. Invalid username and password
+2. Incorrect SSH-key file
+3. Connecting to the wrong device
+
+Device settings: cisco_ios 192.168.244.146:22
+
+
+Authentication failed.).
+2026-05-25 12:13:44,740 - [AUDIT] - Dispositivo '192.168.244.253' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:13:45,945 - [AUDIT] - Dispositivo '192.168.244.17' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:13:47,614 - [AUDIT] - Dispositivo '192.168.244.252' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:13:49,522 - [AUDIT] - Dispositivo '10.10.254.242' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:13:52,214 - [AUDIT] - Dispositivo '192.168.244.242' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:07,450 - [AUDIT] - Dispositivo '10.10.254.238' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:09,212 - [AUDIT] - Dispositivo '192.168.244.148' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:10,728 - [AUDIT] - Dispositivo '192.168.244.244' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:12,119 - [AUDIT] - Dispositivo '192.168.244.12' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:13,523 - [AUDIT] - Dispositivo '192.168.244.243' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:15,169 - [AUDIT] - Dispositivo '192.168.244.9' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:16,537 - [AUDIT] - Dispositivo '192.168.244.240' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:17,816 - [AUDIT] - Dispositivo '192.168.244.15' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:19,858 - [AUDIT] - Dispositivo '10.10.254.247' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:21,088 - [AUDIT] - Dispositivo '10.10.254.246' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:22,383 - [AUDIT] - Dispositivo '192.168.244.14' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:23,428 - [AUDIT] - Dispositivo '10.10.254.248' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:24,639 - [AUDIT] - Dispositivo '10.10.254.240' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:26,090 - [AUDIT] - Dispositivo '192.168.244.20' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:27,332 - [AUDIT] - Dispositivo '10.10.254.251' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:29,308 - [AUDIT] - Dispositivo '10.10.254.249' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:33,025 - [AUDIT] - Dispositivo '192.168.244.13' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:34,166 - [AUDIT] - Dispositivo '10.10.254.250' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:35,236 - [AUDIT] - Dispositivo '10.10.254.239' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:36,664 - [AUDIT] - Dispositivo '192.168.244.245' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:37,990 - [AUDIT] - Dispositivo '192.168.244.18' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:39,262 - [AUDIT] - Dispositivo '10.10.254.245' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:40,653 - [AUDIT] - Dispositivo '10.10.254.244' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:42,014 - [AUDIT] - Dispositivo '192.168.244.19' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:43,769 - [AUDIT] - Dispositivo '10.10.254.243' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:45,007 - [AUDIT] - Dispositivo '192.168.244.16' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:46,221 - [AUDIT] - Dispositivo '192.168.244.25' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:47,735 - [AUDIT] - Dispositivo '10.10.254.236' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:49,025 - [AUDIT] - Dispositivo '10.10.254.237' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:50,409 - [AUDIT] - Dispositivo '192.168.244.241' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:51,738 - [AUDIT] - Dispositivo '10.10.254.252' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:14:53,084 - [AUDIT] - Dispositivo '192.168.244.146' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 12:15:32,039 - [AUDIT] - Importazione massiva completata: 3 apparati importati da CSV dall'utente 'admin'.
+2026-05-25 12:19:32,026 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 13:05:43,896 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 13:05:52,395 - [AUDIT] - Dispositivo '192.168.244.253' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 13:05:53,635 - [AUDIT] - Dispositivo '192.168.244.17' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 13:05:55,061 - [AUDIT] - Dispositivo '192.168.244.252' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 13:07:21,512 - [AUDIT] - Importazione massiva completata: 3 apparati importati da CSV dall'utente 'admin'.
+2026-05-25 14:13:12,164 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 14:13:41,744 - [AUDIT] - Dispositivo '192.168.244.253' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 14:13:43,447 - [AUDIT] - Dispositivo '192.168.244.17' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 14:13:44,961 - [AUDIT] - Dispositivo '192.168.244.252' eliminato dall'inventario dall'utente 'admin'.
+2026-05-25 14:13:49,786 - [AUDIT] - Gruppo 'Baldassari' eliminato dall'utente 'admin'. Tutti i relativi apparati sono riassegnati a 'Generale'.
+2026-05-25 14:13:51,039 - [AUDIT] - Gruppo 'test1' eliminato dall'utente 'admin'. Tutti i relativi apparati sono riassegnati a 'Generale'.
+2026-05-25 14:23:19,116 - [AUDIT] - Gruppo 'test' (descrizione: 'Sede secondaria test') creato dall'utente 'admin'.
+2026-05-25 14:42:45,552 - [AUDIT] - Utente 'admin' loggato con successo.
+2026-05-25 14:42:50,784 - [AUDIT] - Topologia resettata dall'utente 'admin'. Eliminati 1 file cache.
+2026-05-25 14:42:54,689 - [AUDIT] - Topologia resettata dall'utente 'admin'. Eliminati 0 file cache.
+2026-05-25 14:48:34,783 - [AUDIT] - Gruppo 'test' eliminato dall'utente 'admin'. Tutti i relativi apparati sono riassegnati a 'Generale'.
