@@ -308,33 +308,52 @@ def parse_cdp_lldp_neighbors(content: str) -> list:
                     "remote_port": remote_port.strip()
                 })
 
-    # 6. Parsing di "SHOW LLDP NEIGHBORS DETAIL" (Cisco)
+    # 6. Parsing di "SHOW LLDP NEIGHBORS DETAIL" (Cisco IOS / IOS-XE)
+    # Il formato reale usa blocchi separati da "------------------------------------------------"
+    # e l'IP di management è sotto "Management Addresses:\n    IP: x.x.x.x"
     lldp_detail_section = re.search(r'--- SHOW LLDP NEIGHBORS DETAIL ---\s*\n(.*?)(?=\n--- [A-Z]|\n===|\Z)', content, re.DOTALL | re.IGNORECASE)
     if lldp_detail_section:
-        blocks = re.split(r'-{20,}', lldp_detail_section.group(1))
-        for block in blocks:
+        section_text = lldp_detail_section.group(1)
+
+        # Splitta sui separatori a trattini (20+ trattini), scarta blocchi vuoti
+        raw_blocks = re.split(r'-{20,}', section_text)
+
+        for block in raw_blocks:
             if not block.strip():
                 continue
+
             local_port_m = re.search(r'Local Intf:\s*([^\n\r]+)', block, re.IGNORECASE)
-            port_id_m = re.search(r'Port id:\s*([^\n\r]+)', block, re.IGNORECASE)
-            port_desc_m = re.search(r'Port Description:\s*([^\n\r]+)', block, re.IGNORECASE)
-            sys_name_m = re.search(r'System Name:\s*([^\n\r]+)', block, re.IGNORECASE)
-            ip_m = re.search(r'(?:Management Address - IPv4|Management Address|IP Address):\s*([0-9.]+)', block, re.IGNORECASE)
-            sys_desc_m = re.search(r'System Description:\s*([^\n\r]+(?:(?:\n\r?|\r\n?)[ \t]+[^\n\r]+)*)', block, re.IGNORECASE)
-            
+            port_id_m    = re.search(r'Port id:\s*([^\n\r]+)', block, re.IGNORECASE)
+            port_desc_m  = re.search(r'Port Description:\s*([^\n\r]+)', block, re.IGNORECASE)
+            sys_name_m   = re.search(r'System Name:\s*([^\n\r]+)', block, re.IGNORECASE)
+
+            # IOS-XE real format:
+            #   Management Addresses:
+            #       IP: 192.168.31.183
+            # Prova prima il formato indentato "    IP: x.x.x.x", poi i formati alternativi
+            ip_m = (
+                re.search(r'Management Addresses?:.*?^\s+IP:\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', block, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+                or re.search(r'(?:Management Address\s*[-–]\s*IPv4|Management Address|IP Address):\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', block, re.IGNORECASE)
+            )
+
+            # System Description può essere multiriga (le righe successive sono indentate)
+            sys_desc_m = re.search(
+                r'System Description:\s*\n((?:[ \t]+[^\n]*\n?)+)',
+                block, re.IGNORECASE
+            )
+
             if sys_name_m:
-                # remote port: prefer Port Description if available, otherwise Port id
                 remote_port = "Unknown"
                 if port_desc_m:
                     remote_port = port_desc_m.group(1).strip()
                 elif port_id_m:
                     remote_port = port_id_m.group(1).strip()
-                
+
                 version_str = None
                 if sys_desc_m:
                     sys_desc = re.sub(r'\s+', ' ', sys_desc_m.group(1)).strip()
-                    version_str = sys_desc
-                
+                    version_str = sys_desc if sys_desc else None
+
                 neighbors.append({
                     "neighbor_id": sys_name_m.group(1).strip(),
                     "neighbor_ip": ip_m.group(1).strip() if ip_m else None,
